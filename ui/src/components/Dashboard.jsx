@@ -1,21 +1,24 @@
 import Overview from './views/Overview'
 import EnergyMarket from './views/EnergyMarket'
 import PanelRegistry from './views/PanelRegistry'
+import Utilities from './views/Utilities'
 import EnergyWallet from './views/EnergyWallet'
 import Settlement from './views/Settlement'
 import StakingVault from './views/StakingVault'
 import Governance from './views/Governance'
 import Settings from './views/Settings'
 
-export default function Dashboard({ activeView }) {
+export default function Dashboard({ activeView, setActiveView }) {
   const renderView = () => {
     switch (activeView) {
       case 'dashboard':
-        return <Overview />
+        return <Overview setActiveView={setActiveView} />
       case 'market':
         return <EnergyMarket />
       case 'panels':
-        return <PanelRegistry />
+        return <PanelRegistry setActiveView={setActiveView} />
+      case 'utilities':
+        return <Utilities />
       case 'wallet':
         return <EnergyWallet />
       case 'settlement':
@@ -27,7 +30,7 @@ export default function Dashboard({ activeView }) {
       case 'settings':
         return <Settings />
       default:
-        return <Overview />
+        return <Overview setActiveView={setActiveView} />
     }
   }
 

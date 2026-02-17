@@ -123,7 +123,7 @@ export default function EnergyMarket() {
                     <div className="text-energy-green font-semibold">$0.067/kWh</div>
                     <div className="text-sm text-gray-400">Clearing Price</div>
                   </div>
-                  <button className="btn-secondary">View Details</button>
+                  <button type="button" className="btn-secondary">View Details</button>
                 </div>
               ))}
             </div>
@@ -138,6 +138,7 @@ export default function EnergyMarket() {
               <label className="block text-sm text-gray-400 mb-2">Order Type</label>
               <div className="flex gap-2">
                 <button
+                  type="button"
                   onClick={() => setOrderType('bid')}
                   className={`flex-1 py-2 px-4 rounded-lg font-semibold transition-colors ${
                     orderType === 'bid'
@@ -148,6 +149,7 @@ export default function EnergyMarket() {
                   Buy (Bid)
                 </button>
                 <button
+                  type="button"
                   onClick={() => setOrderType('ask')}
                   className={`flex-1 py-2 px-4 rounded-lg font-semibold transition-colors ${
                     orderType === 'ask'
@@ -206,6 +208,7 @@ export default function EnergyMarket() {
             )}
 
             <button
+              type="button"
               onClick={handlePlaceOrder}
               className="w-full btn-primary"
             >

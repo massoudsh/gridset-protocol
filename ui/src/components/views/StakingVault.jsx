@@ -115,6 +115,7 @@ export default function StakingVault() {
               )}
             </div>
             <button
+              type="button"
               onClick={handleDeposit}
               className="w-full btn-primary"
             >
@@ -151,6 +152,7 @@ export default function StakingVault() {
               )}
             </div>
             <button
+              type="button"
               onClick={handleWithdraw}
               className="w-full btn-secondary"
             >

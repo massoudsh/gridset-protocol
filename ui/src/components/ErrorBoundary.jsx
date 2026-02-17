@@ -24,8 +24,9 @@ class ErrorBoundary extends React.Component {
               {this.state.error?.toString()}
               {this.state.error?.stack}
             </pre>
-            <button
-              onClick={() => window.location.reload()}
+<button
+            type="button"
+            onClick={() => window.location.reload()}
               className="mt-4 btn-primary"
             >
               Reload Page

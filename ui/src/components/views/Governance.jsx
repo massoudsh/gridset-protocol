@@ -99,7 +99,7 @@ export default function Governance() {
                 className="input-field w-full"
               />
             </div>
-            <button className="btn-primary">Create Proposal</button>
+            <button type="button" className="btn-primary">Create Proposal</button>
           </div>
         </div>
       )}
@@ -162,11 +162,11 @@ export default function Governance() {
 
                   {proposal.status === 'active' && isConnected && (
                     <div className="flex gap-3 pt-3 border-t border-gray-700">
-                      <button className="flex-1 btn-primary flex items-center justify-center gap-2">
+                      <button type="button" className="flex-1 btn-primary flex items-center justify-center gap-2">
                         <CheckCircle className="w-4 h-4" />
                         Vote For
                       </button>
-                      <button className="flex-1 bg-red-500 hover:bg-red-600 text-white font-semibold py-2 px-4 rounded-lg transition-colors flex items-center justify-center gap-2">
+                      <button type="button" className="flex-1 bg-red-500 hover:bg-red-600 text-white font-semibold py-2 px-4 rounded-lg transition-colors flex items-center justify-center gap-2">
                         <XCircle className="w-4 h-4" />
                         Vote Against
                       </button>

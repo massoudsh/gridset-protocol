@@ -2,6 +2,7 @@ import {
   LayoutDashboard, 
   TrendingUp, 
   Sun, 
+  BatteryCharging,
   Wallet, 
   Gauge, 
   Lock, 
@@ -13,6 +14,7 @@ const menuItems = [
   { id: 'dashboard', label: 'Dashboard', icon: LayoutDashboard },
   { id: 'market', label: 'Energy Market', icon: TrendingUp },
   { id: 'panels', label: 'Panel Registry', icon: Sun },
+  { id: 'utilities', label: 'Utilities', icon: BatteryCharging },
   { id: 'wallet', label: 'Energy Wallet', icon: Wallet },
   { id: 'settlement', label: 'Settlement', icon: Gauge },
   { id: 'staking', label: 'Staking Vault', icon: Lock },
@@ -33,6 +35,7 @@ export default function Sidebar({ activeView, setActiveView, isOpen }) {
             return (
               <li key={item.id}>
                 <button
+                  type="button"
                   onClick={() => setActiveView(item.id)}
                   className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg transition-all duration-200 ${
                     isActive

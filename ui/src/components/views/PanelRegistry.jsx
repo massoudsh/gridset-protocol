@@ -2,7 +2,7 @@ import { useState } from 'react'
 import { Sun, Zap, MapPin, Calendar, TrendingUp } from 'lucide-react'
 import { useWeb3 } from '../../context/Web3Context'
 
-export default function PanelRegistry() {
+export default function PanelRegistry({ setActiveView }) {
   const { isConnected } = useWeb3()
   const [showRegister, setShowRegister] = useState(false)
 
@@ -45,6 +45,7 @@ export default function PanelRegistry() {
         </div>
         {isConnected && (
           <button
+            type="button"
             onClick={() => setShowRegister(!showRegister)}
             className="btn-primary"
           >
@@ -91,8 +92,9 @@ export default function PanelRegistry() {
             </div>
           </div>
           <div className="flex gap-3 mt-4">
-            <button className="btn-primary">Register Panel</button>
+            <button type="button" className="btn-primary">Register Panel</button>
             <button
+              type="button"
               onClick={() => setShowRegister(false)}
               className="bg-gray-700 hover:bg-gray-600 text-white font-semibold py-2 px-4 rounded-lg transition-colors"
             >
@@ -179,8 +181,18 @@ export default function PanelRegistry() {
             </div>
 
             <div className="mt-4 flex gap-2">
-              <button className="flex-1 btn-secondary text-sm">View Details</button>
-              <button className="flex-1 bg-gray-700 hover:bg-gray-600 text-white font-semibold py-2 px-4 rounded-lg transition-colors text-sm">
+              <button
+                type="button"
+                onClick={() => setActiveView?.('panels')}
+                className="flex-1 btn-secondary text-sm"
+              >
+                View Details
+              </button>
+              <button
+                type="button"
+                onClick={() => setActiveView?.('wallet')}
+                className="flex-1 bg-gray-700 hover:bg-gray-600 text-white font-semibold py-2 px-4 rounded-lg transition-colors text-sm"
+              >
                 Transfer
               </button>
             </div>

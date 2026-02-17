@@ -14,6 +14,7 @@ export default function Header({ sidebarOpen, setSidebarOpen }) {
       <div className="flex items-center justify-between px-6 py-4">
         <div className="flex items-center gap-4">
           <button
+            type="button"
             onClick={() => setSidebarOpen(!sidebarOpen)}
             className="p-2 hover:bg-gray-800 rounded-lg transition-colors"
           >
@@ -33,6 +34,7 @@ export default function Header({ sidebarOpen, setSidebarOpen }) {
                 <span className="text-energy-green font-medium">{formatAddress(account)}</span>
               </div>
               <button
+                type="button"
                 onClick={disconnectWallet}
                 className="btn-secondary"
               >
@@ -41,6 +43,7 @@ export default function Header({ sidebarOpen, setSidebarOpen }) {
             </>
           ) : (
             <button
+              type="button"
               onClick={connectWallet}
               className="btn-primary"
             >

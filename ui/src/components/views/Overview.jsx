@@ -20,7 +20,7 @@ const mockPriceData = [
   { time: '20:00', price: 0.05 },
 ]
 
-export default function Overview() {
+export default function Overview({ setActiveView }) {
   const { isConnected, account } = useWeb3()
 
   const metrics = [
@@ -202,10 +202,33 @@ export default function Overview() {
         <div className="card">
           <h3 className="text-lg font-semibold text-white mb-4">Quick Actions</h3>
           <div className="space-y-2">
-            <button className="w-full btn-primary text-left">Place Market Order</button>
-            <button className="w-full btn-secondary text-left">Register Panel</button>
-            <button className="w-full bg-gray-700 hover:bg-gray-600 text-white font-semibold py-2 px-4 rounded-lg transition-colors text-left">
+            <button
+              type="button"
+              onClick={() => setActiveView?.('market')}
+              className="w-full btn-primary text-left"
+            >
+              Place Market Order
+            </button>
+            <button
+              type="button"
+              onClick={() => setActiveView?.('panels')}
+              className="w-full btn-secondary text-left"
+            >
+              Register Panel
+            </button>
+            <button
+              type="button"
+              onClick={() => setActiveView?.('settlement')}
+              className="w-full bg-gray-700 hover:bg-gray-600 text-white font-semibold py-2 px-4 rounded-lg transition-colors text-left"
+            >
               View Settlement
+            </button>
+            <button
+              type="button"
+              onClick={() => setActiveView?.('utilities')}
+              className="w-full bg-gray-700 hover:bg-gray-600 text-white font-semibold py-2 px-4 rounded-lg transition-colors text-left"
+            >
+              Green Energy Utilities
             </button>
           </div>
         </div>

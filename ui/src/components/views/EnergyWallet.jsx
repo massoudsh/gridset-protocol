@@ -124,6 +124,7 @@ export default function EnergyWallet() {
               </div>
             )}
             <button
+              type="button"
               onClick={handleTransfer}
               className="w-full btn-primary flex items-center justify-center gap-2"
             >

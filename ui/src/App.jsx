@@ -24,7 +24,7 @@ function App() {
               isOpen={sidebarOpen}
             />
             <main className={`flex-1 transition-all duration-300 ${sidebarOpen ? 'ml-64' : 'ml-0'}`}>
-              <Dashboard activeView={activeView} />
+              <Dashboard activeView={activeView} setActiveView={setActiveView} />
             </main>
           </div>
         </div>

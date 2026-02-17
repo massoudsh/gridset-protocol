@@ -101,7 +101,7 @@ export default function Settlement() {
                     {settlement.payment >= 0 ? '+' : ''}${Math.abs(settlement.payment).toFixed(2)}
                   </div>
                 </div>
-                <button className="btn-secondary text-sm">View Details</button>
+                <button type="button" className="btn-secondary text-sm">View Details</button>
               </div>
             </div>
           ))}
@@ -153,7 +153,7 @@ export default function Settlement() {
                 All settlements have been finalized without disputes
               </p>
             </div>
-            <button className="w-full btn-secondary">Raise Dispute</button>
+            <button type="button" className="w-full btn-secondary">Raise Dispute</button>
           </div>
         </div>
       </div>
