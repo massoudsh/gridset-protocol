@@ -3,61 +3,116 @@ pragma solidity ^0.8.20;
 
 import {Test} from "forge-std/Test.sol";
 import {EnergyMarket} from "../src/EnergyMarket.sol";
+import {IEnergyMarket} from "../src/interfaces/IEnergyMarket.sol";
 
 contract EnergyMarketTest is Test {
     EnergyMarket public market;
 
+    address public owner;
+    address public alice;
+    address public bob;
+
+    uint256 public constant SLOT = 1000;
+    uint256 public constant DURATION = 3600;
+
     function setUp() public {
         market = new EnergyMarket();
+        owner = address(this);
+        alice = makeAddr("alice");
+        bob = makeAddr("bob");
     }
 
-    function test_placeBid_Reverts() public {
-        vm.expectRevert("NOT_IMPLEMENTED");
-        market.placeBid(1, 100, 50);
+    function test_startAuction_OnlyOwner() public {
+        vm.prank(alice);
+        vm.expectRevert(EnergyMarket.Unauthorized.selector);
+        market.startAuction(SLOT, DURATION);
     }
 
-    function test_placeAsk_Reverts() public {
-        vm.expectRevert("NOT_IMPLEMENTED");
-        market.placeAsk(1, 100, 50);
+    function test_startAuction_Success() public {
+        market.startAuction(SLOT, DURATION);
+        IEnergyMarket.Auction memory a = market.getAuction(SLOT);
+        assertEq(a.timeSlot, SLOT);
+        assertTrue(a.startTime > 0);
+        assertEq(a.endTime, a.startTime + DURATION);
+        assertFalse(a.isCleared);
     }
 
-    function test_cancelOrder_Reverts() public {
-        vm.expectRevert("NOT_IMPLEMENTED");
-        market.cancelOrder(1);
+    function test_placeBid_Success() public {
+        market.startAuction(SLOT, DURATION);
+        vm.prank(alice);
+        uint256 id = market.placeBid(SLOT, 100, 50);
+        assertEq(id, 1);
+        IEnergyMarket.Order memory o = market.getOrder(1);
+        assertEq(o.trader, alice);
+        assertTrue(o.isBid);
+        assertEq(o.price, 100);
+        assertEq(o.quantity, 50);
+        assertTrue(o.isActive);
     }
 
-    function test_startAuction_Reverts() public {
-        vm.expectRevert("NOT_IMPLEMENTED");
-        market.startAuction(1, 3600);
+    function test_placeAsk_Success() public {
+        market.startAuction(SLOT, DURATION);
+        vm.prank(bob);
+        uint256 id = market.placeAsk(SLOT, 110, 30);
+        assertEq(id, 1);
+        IEnergyMarket.Order memory o = market.getOrder(1);
+        assertEq(o.trader, bob);
+        assertFalse(o.isBid);
+        assertEq(o.price, 110);
+        assertEq(o.quantity, 30);
     }
 
-    function test_clearAuction_Reverts() public {
-        vm.expectRevert("NOT_IMPLEMENTED");
-        market.clearAuction(1);
+    function test_getBestBid_getBestAsk() public {
+        market.startAuction(SLOT, DURATION);
+        vm.prank(alice);
+        market.placeBid(SLOT, 100, 50);
+        vm.prank(alice);
+        market.placeBid(SLOT, 105, 20);
+        vm.prank(bob);
+        market.placeAsk(SLOT, 110, 30);
+        (uint256 bidPrice, uint256 bidQty) = market.getBestBid(SLOT);
+        assertEq(bidPrice, 105);
+        assertEq(bidQty, 20);
+        (uint256 askPrice, uint256 askQty) = market.getBestAsk(SLOT);
+        assertEq(askPrice, 110);
+        assertEq(askQty, 30);
     }
 
-    function test_getOrder_Reverts() public {
-        vm.expectRevert("NOT_IMPLEMENTED");
-        market.getOrder(1);
+    function test_cancelOrder_Success() public {
+        market.startAuction(SLOT, DURATION);
+        vm.prank(alice);
+        uint256 id = market.placeBid(SLOT, 100, 50);
+        vm.prank(alice);
+        market.cancelOrder(id);
+        IEnergyMarket.Order memory o = market.getOrder(id);
+        assertFalse(o.isActive);
     }
 
-    function test_getAuction_Reverts() public {
-        vm.expectRevert("NOT_IMPLEMENTED");
-        market.getAuction(1);
+    function test_clearAuction_Success() public {
+        market.startAuction(SLOT, DURATION);
+        vm.prank(alice);
+        market.placeBid(SLOT, 100, 50);
+        vm.prank(bob);
+        market.placeAsk(SLOT, 90, 40);
+        uint256 clearing = market.clearAuction(SLOT);
+        assertEq(clearing, 100);
+        assertTrue(market.getAuction(SLOT).isCleared);
+        assertEq(market.getOrder(1).filledQuantity, 40);
+        assertEq(market.getOrder(2).filledQuantity, 40);
     }
 
-    function test_getBestBid_Reverts() public {
-        vm.expectRevert("NOT_IMPLEMENTED");
-        market.getBestBid(1);
+    function test_clearAuction_OnlyOwner() public {
+        market.startAuction(SLOT, DURATION);
+        vm.prank(alice);
+        vm.expectRevert(EnergyMarket.Unauthorized.selector);
+        market.clearAuction(SLOT);
     }
 
-    function test_getBestAsk_Reverts() public {
-        vm.expectRevert("NOT_IMPLEMENTED");
-        market.getBestAsk(1);
-    }
-
-    function test_getOrderBook_Reverts() public {
-        vm.expectRevert("NOT_IMPLEMENTED");
-        market.getOrderBook(1);
+    function test_placeBid_RevertsAfterClear() public {
+        market.startAuction(SLOT, DURATION);
+        market.clearAuction(SLOT);
+        vm.prank(alice);
+        vm.expectRevert(EnergyMarket.AuctionAlreadyCleared.selector);
+        market.placeBid(SLOT, 100, 50);
     }
 }

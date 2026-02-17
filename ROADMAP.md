@@ -16,7 +16,7 @@
 ## Development Phases
 
 ### Phase 1: Core Smart Contract Implementation
-**Status:** 🔴 Not Started  
+**Status:** ✅ Completed  
 **Priority:** High  
 **Estimated Duration:** 3-4 weeks  
 **Issue:** [#1](https://github.com/massoudsh/gridset-protocol/issues/1)
@@ -30,7 +30,7 @@ Implement core functionality for:
 ---
 
 ### Phase 2: EnergyOracle Implementation
-**Status:** 🔴 Not Started  
+**Status:** ✅ Completed  
 **Priority:** High  
 **Estimated Duration:** 2-3 weeks  
 **Issue:** [#2](https://github.com/massoudsh/gridset-protocol/issues/2)
@@ -44,7 +44,7 @@ Implement oracle system for:
 ---
 
 ### Phase 3: EnergyMarket - Batch Auction Implementation
-**Status:** 🔴 Not Started  
+**Status:** ✅ Completed  
 **Priority:** High  
 **Estimated Duration:** 3-4 weeks  
 **Issue:** [#3](https://github.com/massoudsh/gridset-protocol/issues/3)
@@ -168,6 +168,12 @@ Mainnet launch:
 ### Advanced Analytics Dashboard
 **Status:** 🔴 Not Started  
 **Issue:** [#13](https://github.com/massoudsh/gridset-protocol/issues/13)
+
+---
+
+## New issues for development
+
+See **[docs/NEW_ISSUES.md](docs/NEW_ISSUES.md)** for a backlog of 17 concrete issues (features, UX, infra, security) to create in GitHub. Includes: Utilities cart/checkout, EnergyMarket escrow, SettlementEngine/GovernanceDAO implementation, UI contract integration, deployment scripts, E2E tests, and more.
 
 ---
 
