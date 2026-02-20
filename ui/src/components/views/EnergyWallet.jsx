@@ -1,6 +1,6 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useCallback } from 'react'
 import { ethers } from 'ethers'
-import { Wallet, Lock, Unlock, Send, ArrowRightLeft } from 'lucide-react'
+import { Wallet, Lock, Unlock, Send, ArrowRightLeft, RefreshCw } from 'lucide-react'
 import { useWeb3 } from '../../context/Web3Context'
 
 export default function EnergyWallet() {
@@ -9,6 +9,23 @@ export default function EnergyWallet() {
   const [transferAmount, setTransferAmount] = useState('')
   const [balance, setBalance] = useState({ total: 0, available: 0, locked: 0 })
   const [balanceLoading, setBalanceLoading] = useState(false)
+  const [refreshKey, setRefreshKey] = useState(0)
+
+  const fetchBalance = useCallback(() => {
+    if (!contracts?.energyToken || !account) return
+    setBalanceLoading(true)
+    contracts.energyToken
+      .getEnergyBalance(account)
+      .then((b) =>
+        setBalance({
+          total: Number(ethers.formatEther(b.total)),
+          available: Number(ethers.formatEther(b.available)),
+          locked: Number(ethers.formatEther(b.locked)),
+        })
+      )
+      .catch(() => setBalance({ total: 0, available: 0, locked: 0 }))
+      .finally(() => setBalanceLoading(false))
+  }, [contracts?.energyToken, account])
 
   useEffect(() => {
     if (!contracts?.energyToken || !account) {
@@ -34,7 +51,13 @@ export default function EnergyWallet() {
         if (!cancelled) setBalanceLoading(false)
       })
     return () => { cancelled = true }
-  }, [contracts?.energyToken, account])
+  }, [contracts?.energyToken, account, refreshKey])
+
+  useEffect(() => {
+    if (!contracts?.energyToken || !account) return
+    const id = setInterval(fetchBalance, 30_000)
+    return () => clearInterval(id)
+  }, [fetchBalance])
 
   const displayBalance = contracts?.energyToken
     ? balance
@@ -73,12 +96,7 @@ export default function EnergyWallet() {
       try {
         const tx = await contracts.energyToken.transfer(transferTo, ethers.parseEther(String(transferAmount)))
         await tx.wait()
-        const b = await contracts.energyToken.getEnergyBalance(account)
-        setBalance({
-          total: Number(ethers.formatEther(b.total)),
-          available: Number(ethers.formatEther(b.available)),
-          locked: Number(ethers.formatEther(b.locked)),
-        })
+        fetchBalance()
         setTransferTo('')
         setTransferAmount('')
       } catch (e) {
@@ -91,9 +109,23 @@ export default function EnergyWallet() {
 
   return (
     <div className="space-y-6">
-      <div>
-        <h2 className="text-3xl font-bold text-white mb-2">Energy Wallet</h2>
-        <p className="text-gray-400">Manage your energy token balances</p>
+      <div className="flex items-start justify-between gap-4">
+        <div>
+          <h2 className="text-3xl font-bold text-white mb-2">Energy Wallet</h2>
+          <p className="text-gray-400">Manage your energy token balances</p>
+        </div>
+        {contracts?.energyToken && account && (
+          <button
+            type="button"
+            onClick={() => setRefreshKey((k) => k + 1)}
+            className="p-2 rounded-lg hover:bg-gray-800 text-gray-400 hover:text-white disabled:opacity-50"
+            title="Refresh balance"
+            aria-label="Refresh balance"
+            disabled={balanceLoading}
+          >
+            <RefreshCw className={`w-5 h-5 ${balanceLoading ? 'animate-spin' : ''}`} />
+          </button>
+        )}
       </div>
 
       {!isConnected && (

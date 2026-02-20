@@ -27,10 +27,11 @@ export function hasAnyAddress() {
 
 // Minimal ABIs for read/write (expand or load from ui/src/abis/*.json when available)
 export const abis = {
-  energyToken: [], // set below or load from abis/EnergyToken.json
+  energyToken: [],
+  energyMarket: [],
 }
 
-// Inline minimal EnergyToken ABI for balanceOf, transfer, getEnergyBalance (so UI works without copying build output)
+// Inline minimal EnergyToken ABI
 if (typeof window !== 'undefined' || typeof globalThis !== 'undefined') {
   abis.energyToken = [
     { inputs: [{ name: 'account', type: 'address' }], name: 'balanceOf', outputs: [{ type: 'uint256' }], stateMutability: 'view', type: 'function' },
@@ -38,5 +39,23 @@ if (typeof window !== 'undefined' || typeof globalThis !== 'undefined') {
     { inputs: [], name: 'totalSupply', outputs: [{ type: 'uint256' }], stateMutability: 'view', type: 'function' },
     { inputs: [{ name: 'to', type: 'address' }, { name: 'amount', type: 'uint256' }], name: 'transfer', outputs: [{ type: 'bool' }], stateMutability: 'nonpayable', type: 'function' },
     { inputs: [{ name: 'spender', type: 'address' }, { name: 'amount', type: 'uint256' }], name: 'approve', outputs: [{ type: 'bool' }], stateMutability: 'nonpayable', type: 'function' },
+  ]
+  // EnergyMarket: read-only auction summary
+  const auctionStruct = {
+    components: [
+      { name: 'timeSlot', type: 'uint256' },
+      { name: 'startTime', type: 'uint256' },
+      { name: 'endTime', type: 'uint256' },
+      { name: 'clearingPrice', type: 'uint256' },
+      { name: 'totalBidQuantity', type: 'uint256' },
+      { name: 'totalAskQuantity', type: 'uint256' },
+      { name: 'isCleared', type: 'bool' },
+    ],
+    type: 'tuple',
+  }
+  abis.energyMarket = [
+    { inputs: [{ name: 'timeSlot', type: 'uint256' }], name: 'getAuction', outputs: [auctionStruct], stateMutability: 'view', type: 'function' },
+    { inputs: [{ name: 'timeSlot', type: 'uint256' }], name: 'getBestBid', outputs: [{ name: 'price', type: 'uint256' }, { name: 'quantity', type: 'uint256' }], stateMutability: 'view', type: 'function' },
+    { inputs: [{ name: 'timeSlot', type: 'uint256' }], name: 'getBestAsk', outputs: [{ name: 'price', type: 'uint256' }, { name: 'quantity', type: 'uint256' }], stateMutability: 'view', type: 'function' },
   ]
 }

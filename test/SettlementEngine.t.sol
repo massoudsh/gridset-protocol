@@ -1,11 +1,13 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.20;
 
-import {Test} from "forge-std/Test.sol";
-import {SettlementEngine} from "../src/SettlementEngine.sol";
-import {EnergyToken} from "../src/EnergyToken.sol";
-import {EnergyMarket} from "../src/EnergyMarket.sol";
-import {ISettlementEngine} from "../src/interfaces/ISettlementEngine.sol";
+import { Test } from "forge-std/Test.sol";
+import { SettlementEngine } from "../src/SettlementEngine.sol";
+import { EnergyToken } from "../src/EnergyToken.sol";
+import { EnergyMarket } from "../src/EnergyMarket.sol";
+import { ISettlementEngine } from "../src/interfaces/ISettlementEngine.sol";
+import { IEnergyToken } from "../src/interfaces/IEnergyToken.sol";
+import { IEnergyMarket } from "../src/interfaces/IEnergyMarket.sol";
 
 contract SettlementEngineTest is Test {
     SettlementEngine public engine;
@@ -96,6 +98,65 @@ contract SettlementEngineTest is Test {
         engine.finalizeTimeSlot(SLOT);
         vm.prank(alice);
         engine.raiseDispute(SLOT, alice);
-        // No getter for dispute in interface; just check it doesn't revert
+    }
+
+    function test_constructor_RevertsZeroToken() public {
+        vm.expectRevert(SettlementEngine.ZeroAddress.selector);
+        new SettlementEngine(IEnergyToken(address(0)), market);
+    }
+
+    function test_constructor_RevertsZeroMarket() public {
+        vm.expectRevert(SettlementEngine.ZeroAddress.selector);
+        new SettlementEngine(token, IEnergyMarket(address(0)));
+    }
+
+    function test_setPenalizer_RevertsZeroAddress() public {
+        vm.expectRevert(SettlementEngine.ZeroAddress.selector);
+        engine.setPenalizer(address(0), true);
+    }
+
+    function test_finalizeTimeSlot_Idempotent() public {
+        engine.finalizeTimeSlot(SLOT);
+        engine.finalizeTimeSlot(SLOT);
+        ISettlementEngine.TimeSlotSettlement memory s = engine.getTimeSlotSettlement(SLOT);
+        assertTrue(s.isFinalized);
+    }
+
+    function test_settleParticipant_ReturnsEmptyWhenRecordsNotPopulated() public {
+        engine.finalizeTimeSlot(SLOT);
+        uint256 aliceBefore = token.balanceOf(alice);
+        ISettlementEngine.SettlementRecord memory r = engine.settleParticipant(SLOT, alice);
+        assertEq(r.participant, address(0));
+        assertEq(r.timeSlot, 0);
+        assertEq(token.balanceOf(alice), aliceBefore);
+    }
+
+    function test_settleParticipant_UnchangedWhenAlreadySettled() public {
+        engine.finalizeTimeSlot(SLOT);
+        token.approve(address(engine), type(uint256).max);
+        vm.prank(alice);
+        token.approve(address(engine), type(uint256).max);
+        vm.prank(bob);
+        token.approve(address(engine), type(uint256).max);
+        engine.settleTimeSlot(SLOT);
+        ISettlementEngine.SettlementRecord memory r = engine.settleParticipant(SLOT, alice);
+        assertTrue(r.isSettled);
+    }
+
+    function test_assessPenalty_RevertsAmountZero() public {
+        engine.setPenalizer(bob, true);
+        vm.prank(bob);
+        vm.expectRevert(SettlementEngine.AmountZero.selector);
+        engine.assessPenalty(alice, 0, "reason");
+    }
+
+    function test_getSettlementRecord_Empty() public view {
+        ISettlementEngine.SettlementRecord memory r = engine.getSettlementRecord(SLOT, alice);
+        assertEq(r.participant, address(0));
+        assertEq(r.timeSlot, 0);
+    }
+
+    function test_isTimeSlotSettled_False() public view {
+        assertFalse(engine.isTimeSlotSettled(SLOT));
     }
 }

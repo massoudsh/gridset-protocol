@@ -86,30 +86,31 @@ Implement governance:
 ---
 
 ### Phase 6: Security Audit & Testing
-**Status:** 🔴 Not Started  
+**Status:** 🟡 In Progress  
 **Priority:** Critical  
 **Estimated Duration:** 6-8 weeks  
 **Issue:** [#6](https://github.com/massoudsh/gridset-protocol/issues/6)
 
 Security measures:
-- Professional security audit
-- Formal verification
-- Comprehensive testing (>95% coverage)
-- Bug bounty program
+- Professional security audit (planned; not yet completed)
+- Formal verification (candidate for invariants; see SECURITY.md)
+- Comprehensive testing: **>95% line coverage** (130 tests, Forge); fuzz test for EnergyToken mint/supply
+- Bug bounty program (to be announced before mainnet)
+- SECURITY.md: reporting process, scope, pre-audit checklist
 
 ---
 
 ### Phase 7: UI Enhancements & Real Data Integration
-**Status:** 🔴 Not Started  
+**Status:** 🟡 In Progress  
 **Priority:** Medium  
 **Estimated Duration:** 3-4 weeks  
 **Issue:** [#7](https://github.com/massoudsh/gridset-protocol/issues/7)
 
 UI improvements:
-- Real contract integration
-- Real-time data updates
-- UX enhancements
-- Mobile optimization
+- Real contract integration: EnergyToken (Energy Wallet balance, transfer), EnergyMarket (order book summary: best bid/ask, auction, clearing price per time slot)
+- Real-time: 30s auto-refresh for Energy Wallet; manual Refresh on Energy Wallet and Energy Market
+- UX: loading states, error display, live-from-chain indicator on Market
+- Mobile optimization (Tailwind responsive; further tuning as needed)
 
 ---
 

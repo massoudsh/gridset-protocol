@@ -1,13 +1,64 @@
-import { useState } from 'react'
-import { TrendingUp, TrendingDown, ArrowUpDown, Clock } from 'lucide-react'
+import { useState, useEffect } from 'react'
+import { TrendingUp, TrendingDown, Clock, RefreshCw } from 'lucide-react'
 import { useWeb3 } from '../../context/Web3Context'
 
+const DEFAULT_MARKET_SLOT = 1000
+
 export default function EnergyMarket() {
-  const { isConnected } = useWeb3()
+  const { isConnected, contracts } = useWeb3()
   const [orderType, setOrderType] = useState('bid')
   const [timeSlot, setTimeSlot] = useState('')
   const [price, setPrice] = useState('')
   const [quantity, setQuantity] = useState('')
+  const [marketSlot, setMarketSlot] = useState(String(DEFAULT_MARKET_SLOT))
+  const [orderBookLoading, setOrderBookLoading] = useState(false)
+  const [orderBookError, setOrderBookError] = useState(null)
+  const [auction, setAuction] = useState(null)
+  const [bestBid, setBestBid] = useState({ price: 0, quantity: 0 })
+  const [bestAsk, setBestAsk] = useState({ price: 0, quantity: 0 })
+  const [refreshKey, setRefreshKey] = useState(0)
+
+  const slotNum = marketSlot ? parseInt(marketSlot, 10) : 0
+  const hasMarketContract = contracts?.energyMarket && !isNaN(slotNum) && slotNum > 0
+
+  useEffect(() => {
+    if (!hasMarketContract) {
+      setAuction(null)
+      setBestBid({ price: 0, quantity: 0 })
+      setBestAsk({ price: 0, quantity: 0 })
+      setOrderBookError(null)
+      return
+    }
+    let cancelled = false
+    setOrderBookLoading(true)
+    setOrderBookError(null)
+    Promise.all([
+      contracts.energyMarket.getAuction(slotNum),
+      contracts.energyMarket.getBestBid(slotNum),
+      contracts.energyMarket.getBestAsk(slotNum),
+    ])
+      .then(([a, bid, ask]) => {
+        if (cancelled) return
+        setAuction({
+          timeSlot: Number(a.timeSlot),
+          startTime: Number(a.startTime),
+          endTime: Number(a.endTime),
+          clearingPrice: Number(a.clearingPrice),
+          totalBidQuantity: Number(a.totalBidQuantity),
+          totalAskQuantity: Number(a.totalAskQuantity),
+          isCleared: a.isCleared,
+        })
+        setBestBid({ price: Number(bid[0] ?? bid.price), quantity: Number(bid[1] ?? bid.quantity) })
+        setBestAsk({ price: Number(ask[0] ?? ask.price), quantity: Number(ask[1] ?? ask.quantity) })
+      })
+      .catch((e) => {
+        if (!cancelled) setOrderBookError(e?.message || 'Failed to load market')
+      })
+      .finally(() => {
+        if (!cancelled) setOrderBookLoading(false)
+      })
+    return () => { cancelled = true }
+  }, [contracts?.energyMarket, slotNum, hasMarketContract, refreshKey])
 
   const mockBids = [
     { price: 0.068, quantity: 150, total: 10.2 },
@@ -46,11 +97,38 @@ export default function EnergyMarket() {
           <div className="card">
             <div className="flex items-center justify-between mb-6">
               <h3 className="text-xl font-semibold text-white">Order Book</h3>
-              <div className="flex items-center gap-2 text-sm text-gray-400">
-                <Clock className="w-4 h-4" />
-                <span>Time Slot #12,459</span>
+              <div className="flex items-center gap-3">
+                <input
+                  type="number"
+                  min="1"
+                  value={marketSlot}
+                  onChange={(e) => setMarketSlot(e.target.value)}
+                  placeholder="Slot"
+                  className="input-field w-24 text-sm text-center"
+                />
+                <div className="flex items-center gap-2 text-sm text-gray-400">
+                  <Clock className="w-4 h-4" />
+                  <span>Time Slot #{marketSlot || '—'}</span>
+                </div>
+                {hasMarketContract && (
+                  <button
+                    type="button"
+                    onClick={() => setRefreshKey((k) => k + 1)}
+                    className="p-1.5 rounded hover:bg-gray-700 text-gray-400 hover:text-white disabled:opacity-50"
+                    title="Refresh"
+                    aria-label="Refresh"
+                    disabled={orderBookLoading}
+                  >
+                    <RefreshCw className={`w-4 h-4 ${orderBookLoading ? 'animate-spin' : ''}`} />
+                  </button>
+                )}
               </div>
             </div>
+            {orderBookError && (
+              <div className="mb-4 p-3 bg-red-500/10 border border-red-500/30 rounded text-red-400 text-sm">
+                {orderBookError}
+              </div>
+            )}
 
             <div className="grid grid-cols-2 gap-4">
               <div>
@@ -95,18 +173,41 @@ export default function EnergyMarket() {
             </div>
 
             <div className="mt-6 pt-6 border-t border-gray-700">
+              {hasMarketContract && (orderBookLoading || auction) && (
+                <div className="flex items-center gap-2 text-xs text-energy-green mb-2">
+                  {orderBookLoading ? 'Loading…' : 'Live from chain'}
+                </div>
+              )}
               <div className="flex items-center justify-between">
                 <span className="text-gray-400">Spread</span>
-                <span className="text-white font-semibold">$0.001/kWh</span>
+                <span className="text-white font-semibold">
+                  {hasMarketContract && !orderBookLoading && bestBid.price > 0 && bestAsk.price > 0
+                    ? `$${(bestAsk.price - bestBid.price).toFixed(3)}/kWh`
+                    : '$0.001/kWh'}
+                </span>
               </div>
               <div className="flex items-center justify-between mt-2">
                 <span className="text-gray-400">Best Bid</span>
-                <span className="text-energy-green font-semibold">$0.068/kWh</span>
+                <span className="text-energy-green font-semibold">
+                  {hasMarketContract && !orderBookLoading && bestBid.price > 0
+                    ? `${bestBid.price} (${bestBid.quantity} kWh)`
+                    : '$0.068/kWh'}
+                </span>
               </div>
               <div className="flex items-center justify-between mt-2">
                 <span className="text-gray-400">Best Ask</span>
-                <span className="text-red-400 font-semibold">$0.069/kWh</span>
+                <span className="text-red-400 font-semibold">
+                  {hasMarketContract && !orderBookLoading && bestAsk.price > 0
+                    ? `${bestAsk.price} (${bestAsk.quantity} kWh)`
+                    : '$0.069/kWh'}
+                </span>
               </div>
+              {auction?.isCleared && (
+                <div className="flex items-center justify-between mt-2">
+                  <span className="text-gray-400">Clearing Price</span>
+                  <span className="text-white font-semibold">{auction.clearingPrice}</span>
+                </div>
+              )}
             </div>
           </div>
 

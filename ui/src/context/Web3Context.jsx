@@ -12,15 +12,19 @@ export function Web3Provider({ children }) {
   const [chainId, setChainId] = useState(null)
 
   const contracts = useMemo(() => {
-    const addr = contractAddresses.energyToken
-    if (!addr || !addr.startsWith('0x') || addr.length < 40) return { energyToken: null }
-    const abi = abis.energyToken
-    if (!abi || abi.length === 0) return { energyToken: null }
-    return {
-      energyToken: provider
-        ? (signer ? new ethers.Contract(addr, abi, signer) : new ethers.Contract(addr, abi, provider))
-        : null,
+    const out = { energyToken: null, energyMarket: null }
+    if (!provider) return out
+    const tokenAddr = contractAddresses.energyToken
+    if (tokenAddr && tokenAddr.startsWith('0x') && tokenAddr.length >= 40 && abis.energyToken?.length) {
+      out.energyToken = signer
+        ? new ethers.Contract(tokenAddr, abis.energyToken, signer)
+        : new ethers.Contract(tokenAddr, abis.energyToken, provider)
     }
+    const marketAddr = contractAddresses.energyMarket
+    if (marketAddr && marketAddr.startsWith('0x') && marketAddr.length >= 40 && abis.energyMarket?.length) {
+      out.energyMarket = new ethers.Contract(marketAddr, abis.energyMarket, provider)
+    }
+    return out
   }, [provider, signer])
 
   const connectWallet = async () => {

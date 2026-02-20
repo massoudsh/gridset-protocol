@@ -251,4 +251,16 @@ contract EnergyTokenTest is Test {
         vm.expectRevert(EnergyToken.Unauthorized.selector);
         token.setLocker(alice, true);
     }
+
+    /// @dev Fuzz: after mint, balance and totalSupply are consistent
+    function testFuzz_mint_ConsistentSupply(uint256 amount) public {
+        amount = bound(amount, 1, 1e30);
+        token.mint(alice, amount);
+        assertEq(token.balanceOf(alice), amount);
+        assertEq(token.totalSupply(), amount);
+        IEnergyToken.EnergyBalance memory b = token.getEnergyBalance(alice);
+        assertEq(b.total, amount);
+        assertEq(b.available, amount);
+        assertEq(b.locked, 0);
+    }
 }

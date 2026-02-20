@@ -115,4 +115,96 @@ contract EnergyMarketTest is Test {
         vm.expectRevert(EnergyMarket.AuctionAlreadyCleared.selector);
         market.placeBid(SLOT, 100, 50);
     }
+
+    function test_startAuction_RevertsZeroDuration() public {
+        vm.expectRevert(EnergyMarket.InvalidTimeSlot.selector);
+        market.startAuction(SLOT, 0);
+    }
+
+    function test_placeBid_RevertsZeroPrice() public {
+        market.startAuction(SLOT, DURATION);
+        vm.prank(alice);
+        vm.expectRevert(EnergyMarket.ZeroPrice.selector);
+        market.placeBid(SLOT, 0, 50);
+    }
+
+    function test_placeBid_RevertsZeroQuantity() public {
+        market.startAuction(SLOT, DURATION);
+        vm.prank(alice);
+        vm.expectRevert(EnergyMarket.ZeroQuantity.selector);
+        market.placeBid(SLOT, 100, 0);
+    }
+
+    function test_placeBid_RevertsAuctionNotOpen() public {
+        vm.prank(alice);
+        vm.expectRevert(EnergyMarket.AuctionNotOpen.selector);
+        market.placeBid(SLOT, 100, 50);
+    }
+
+    function test_placeBid_RevertsAfterAuctionEnd() public {
+        market.startAuction(SLOT, 1);
+        vm.warp(block.timestamp + 2);
+        vm.prank(alice);
+        vm.expectRevert(EnergyMarket.AuctionNotOpen.selector);
+        market.placeBid(SLOT, 100, 50);
+    }
+
+    function test_placeAsk_RevertsZeroPrice() public {
+        market.startAuction(SLOT, DURATION);
+        vm.prank(bob);
+        vm.expectRevert(EnergyMarket.ZeroPrice.selector);
+        market.placeAsk(SLOT, 0, 30);
+    }
+
+    function test_placeAsk_RevertsZeroQuantity() public {
+        market.startAuction(SLOT, DURATION);
+        vm.prank(bob);
+        vm.expectRevert(EnergyMarket.ZeroQuantity.selector);
+        market.placeAsk(SLOT, 110, 0);
+    }
+
+    function test_placeAsk_RevertsAuctionNotOpen() public {
+        vm.prank(bob);
+        vm.expectRevert(EnergyMarket.AuctionNotOpen.selector);
+        market.placeAsk(SLOT, 110, 30);
+    }
+
+    function test_cancelOrder_RevertsInvalidOrder() public {
+        vm.prank(alice);
+        vm.expectRevert(EnergyMarket.InvalidOrder.selector);
+        market.cancelOrder(999);
+    }
+
+    function test_cancelOrder_RevertsUnauthorized() public {
+        market.startAuction(SLOT, DURATION);
+        vm.prank(alice);
+        uint256 id = market.placeBid(SLOT, 100, 50);
+        vm.prank(bob);
+        vm.expectRevert(EnergyMarket.Unauthorized.selector);
+        market.cancelOrder(id);
+    }
+
+    function test_cancelOrder_RevertsOrderNotActive() public {
+        market.startAuction(SLOT, DURATION);
+        vm.prank(alice);
+        uint256 id = market.placeBid(SLOT, 100, 50);
+        vm.prank(alice);
+        market.cancelOrder(id);
+        vm.prank(alice);
+        vm.expectRevert(EnergyMarket.OrderNotActive.selector);
+        market.cancelOrder(id);
+    }
+
+    function test_getOrder_ReturnsOrder() public {
+        market.startAuction(SLOT, DURATION);
+        vm.prank(alice);
+        uint256 id = market.placeBid(SLOT, 100, 50);
+        IEnergyMarket.Order memory o = market.getOrder(id);
+        assertEq(o.orderId, id);
+        assertEq(o.trader, alice);
+        assertTrue(o.isBid);
+        assertEq(o.price, 100);
+        assertEq(o.quantity, 50);
+        assertEq(o.timeSlot, SLOT);
+    }
 }
