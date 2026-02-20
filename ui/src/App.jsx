@@ -4,6 +4,7 @@ import Header from './components/Header'
 import Sidebar from './components/Sidebar'
 import ErrorBoundary from './components/ErrorBoundary'
 import { Web3Provider } from './context/Web3Context'
+import TestnetBanner from './components/TestnetBanner'
 
 function App() {
   const [activeView, setActiveView] = useState('dashboard')
@@ -17,6 +18,7 @@ function App() {
             sidebarOpen={sidebarOpen} 
             setSidebarOpen={setSidebarOpen} 
           />
+          <TestnetBanner />
           <div className="flex">
             <Sidebar 
               activeView={activeView} 

@@ -131,6 +131,10 @@ The UI will open at `http://localhost:5173` (or the URL Vite prints) and include
 
 See `ui/README.md` for more details.
 
+### Release path
+
+See **[docs/RELEASE_READINESS.md](docs/RELEASE_READINESS.md)** for the shortest path to testnet and mainnet release.
+
 ### Deploy locally
 
 See **[docs/GETTING_STARTED.md](docs/GETTING_STARTED.md)** for the full flow. Quick version:

@@ -87,6 +87,18 @@ To see live data in the **Energy Market** view:
 
 Then open the UI Energy Market, set time slot to **1000**, and use Refresh to see best bid/ask and clearing price.
 
+## Testnet release in 3 steps
+
+1. **Deploy** (need Sepolia ETH: [faucet](https://sepoliafaucet.com/)):
+   ```bash
+   export PRIVATE_KEY=0x...
+   forge script script/Deploy.s.sol --rpc-url https://sepolia.infura.io/v3/YOUR_KEY --broadcast
+   ```
+2. **Copy** the logged addresses into `ui/.env` (keys from table above). Restart the UI.
+3. **Share** app URL + “Switch to Sepolia (11155111) and get test ETH at [faucet].”
+
+See [RELEASE_READINESS.md](RELEASE_READINESS.md) for the full testnet checklist.
+
 ## Testnet and mainnet
 
 - **Testnet**: See [TESTNET.md](TESTNET.md) for testnet deploy, checklist, and community beta.
