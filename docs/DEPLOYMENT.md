@@ -87,6 +87,11 @@ To see live data in the **Energy Market** view:
 
 Then open the UI Energy Market, set time slot to **1000**, and use Refresh to see best bid/ask and clearing price.
 
+## Testnet and mainnet
+
+- **Testnet**: See [TESTNET.md](TESTNET.md) for testnet deploy, checklist, and community beta.
+- **Mainnet**: See [MAINNET_CHECKLIST.md](MAINNET_CHECKLIST.md) before mainnet deploy and launch.
+
 ## Programmatic usage (SDK-style)
 
 Contracts follow the interfaces in `src/interfaces/`. You can use:

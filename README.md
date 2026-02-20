@@ -149,7 +149,7 @@ cd ui && npm install && npm run dev
 - ✅ **Tests**: 130 Forge tests, >95% line coverage; fuzz test for EnergyToken
 - ✅ **UI**: Dashboard, Energy Wallet (balance/transfer), Energy Market (live order book), Panel Registry, Staking, Governance, Settlement, Utilities; contract wiring via env
 - ✅ **Deployment**: `script/Deploy.s.sol` for local/testnet/mainnet; [docs/DEPLOYMENT.md](docs/DEPLOYMENT.md)
-- ✅ **Docs**: [GETTING_STARTED](docs/GETTING_STARTED.md), [DEPLOYMENT](docs/DEPLOYMENT.md), [ROADMAP](ROADMAP.md), [SECURITY](SECURITY.md)
+- ✅ **Docs**: [GETTING_STARTED](docs/GETTING_STARTED.md), [DEPLOYMENT](docs/DEPLOYMENT.md), [TESTNET](docs/TESTNET.md), [MAINNET_CHECKLIST](docs/MAINNET_CHECKLIST.md), [ROADMAP](ROADMAP.md), [SECURITY](SECURITY.md)
 
 ## License
 
