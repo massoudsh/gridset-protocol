@@ -1,3 +1,5 @@
+import { useState, useEffect } from 'react'
+import { ethers } from 'ethers'
 import { Zap, TrendingUp, Sun, DollarSign, Clock, Activity } from 'lucide-react'
 import { LineChart, Line, AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts'
 import { useWeb3 } from '../../context/Web3Context'
@@ -21,13 +23,41 @@ const mockPriceData = [
 ]
 
 export default function Overview({ setActiveView }) {
-  const { isConnected, account } = useWeb3()
+  const { isConnected, account, contracts } = useWeb3()
+  const [chainMetrics, setChainMetrics] = useState({ totalSupply: null, totalStaked: null })
+
+  useEffect(() => {
+    if (!contracts?.energyToken && !contracts?.stakingVault) {
+      setChainMetrics({ totalSupply: null, totalStaked: null })
+      return
+    }
+    let cancelled = false
+    const load = async () => {
+      try {
+        const [supply, staked] = await Promise.all([
+          contracts.energyToken ? contracts.energyToken.totalSupply() : Promise.resolve(null),
+          contracts.stakingVault ? contracts.stakingVault.getTotalStaked() : Promise.resolve(null),
+        ])
+        if (cancelled) return
+        setChainMetrics({
+          totalSupply: supply != null ? Number(ethers.formatEther(supply)) : null,
+          totalStaked: staked != null ? Number(ethers.formatEther(staked)) : null,
+        })
+      } catch {
+        if (!cancelled) setChainMetrics({ totalSupply: null, totalStaked: null })
+      }
+    }
+    load()
+    return () => { cancelled = true }
+  }, [contracts?.energyToken, contracts?.stakingVault])
+
+  const formatMetric = (n) => (n == null ? null : n >= 1e6 ? `${(n / 1e6).toFixed(2)}M` : n >= 1e3 ? `${(n / 1e3).toFixed(2)}K` : n.toFixed(2))
 
   const metrics = [
     {
-      title: 'Total Energy Production',
-      value: '1,245 kWh',
-      change: '+12.5%',
+      title: 'Total Supply (GRID)',
+      value: chainMetrics.totalSupply != null ? `${formatMetric(chainMetrics.totalSupply)}` : '1,245 kWh',
+      change: chainMetrics.totalSupply != null ? 'Live' : '+12.5%',
       icon: Zap,
       color: 'text-energy-green',
       bgColor: 'bg-energy-green/20',
@@ -49,9 +79,9 @@ export default function Overview({ setActiveView }) {
       bgColor: 'bg-energy-yellow/20',
     },
     {
-      title: 'Total Staked',
-      value: '2.4M GRID',
-      change: '+8.1%',
+      title: 'Total Staked (GRID)',
+      value: chainMetrics.totalStaked != null ? `${formatMetric(chainMetrics.totalStaked)}` : '2.4M GRID',
+      change: chainMetrics.totalStaked != null ? 'Live' : '+8.1%',
       icon: DollarSign,
       color: 'text-energy-orange',
       bgColor: 'bg-energy-orange/20',

@@ -73,7 +73,9 @@ contract EnergyToken is IEnergyToken {
     function getEnergyBalance(address account) external view override returns (EnergyBalance memory) {
         uint256 total = _balances[account];
         uint256 locked = _locked[account];
-        return EnergyBalance({ total: total, locked: locked, available: total - locked });
+        uint256 available;
+        unchecked { available = total - locked; }
+        return EnergyBalance({ total: total, locked: locked, available: available });
     }
 
     function transfer(address to, uint256 amount) external override returns (bool) {
@@ -107,8 +109,8 @@ contract EnergyToken is IEnergyToken {
 
         unchecked {
             _allowances[from][msg.sender] = currentAllowance - amount;
+            _balances[from] -= amount;
         }
-        _balances[from] -= amount;
         _balances[to] += amount;
         emit Transfer(from, to, amount);
         return true;
@@ -131,8 +133,10 @@ contract EnergyToken is IEnergyToken {
         uint256 available = _balances[from] - _locked[from];
         if (amount > available) revert InsufficientBalance();
 
-        _balances[from] -= amount;
-        _totalSupply -= amount;
+        unchecked {
+            _balances[from] -= amount;
+            _totalSupply -= amount;
+        }
         emit Burn(from, amount);
         emit Transfer(from, address(0), amount);
     }
@@ -141,7 +145,7 @@ contract EnergyToken is IEnergyToken {
         if (amount == 0) revert AmountZero();
         if (amount > _balances[account] - _locked[account]) revert LockExceedsBalance();
 
-        _locked[account] += amount;
+        unchecked { _locked[account] += amount; }
         emit Lock(account, amount);
     }
 
@@ -149,7 +153,7 @@ contract EnergyToken is IEnergyToken {
         if (amount == 0) revert AmountZero();
         if (amount > _locked[account]) revert InsufficientLocked();
 
-        _locked[account] -= amount;
+        unchecked { _locked[account] -= amount; }
         emit Unlock(account, amount);
     }
 }

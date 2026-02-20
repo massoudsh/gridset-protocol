@@ -51,7 +51,8 @@ contract EnergyMarket is IEnergyMarket {
         if (a.endTime == 0 || block.timestamp >= a.endTime) revert AuctionNotOpen();
         if (a.isCleared) revert AuctionAlreadyCleared();
 
-        uint256 orderId = _nextOrderId++;
+        uint256 orderId;
+        unchecked { orderId = _nextOrderId++; }
         _orders[orderId] = Order({
             orderId: orderId,
             trader: msg.sender,
@@ -75,7 +76,8 @@ contract EnergyMarket is IEnergyMarket {
         if (a.endTime == 0 || block.timestamp >= a.endTime) revert AuctionNotOpen();
         if (a.isCleared) revert AuctionAlreadyCleared();
 
-        uint256 orderId = _nextOrderId++;
+        uint256 orderId;
+        unchecked { orderId = _nextOrderId++; }
         _orders[orderId] = Order({
             orderId: orderId,
             trader: msg.sender,
@@ -101,8 +103,10 @@ contract EnergyMarket is IEnergyMarket {
         if (a.isCleared) revert AuctionAlreadyCleared();
 
         o.isActive = false;
-        if (o.isBid) a.totalBidQuantity -= (o.quantity - o.filledQuantity);
-        else a.totalAskQuantity -= (o.quantity - o.filledQuantity);
+        unchecked {
+            if (o.isBid) a.totalBidQuantity -= (o.quantity - o.filledQuantity);
+            else a.totalAskQuantity -= (o.quantity - o.filledQuantity);
+        }
         emit OrderCancelled(orderId);
     }
 

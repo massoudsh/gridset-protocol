@@ -58,8 +58,10 @@ contract StakingVault is IStakingVault {
         if (amount == 0) revert AmountZero();
         if (block.timestamp < _lockUntil[msg.sender]) revert Locked();
         if (amount > _stake[msg.sender]) revert InsufficientStake();
-        _stake[msg.sender] -= amount;
-        _totalStaked -= amount;
+        unchecked {
+            _stake[msg.sender] -= amount;
+            _totalStaked -= amount;
+        }
         if (!token.transfer(msg.sender, amount)) revert TransferFailed();
         emit StakeWithdrawn(msg.sender, amount, _stake[msg.sender]);
     }
@@ -67,8 +69,10 @@ contract StakingVault is IStakingVault {
     function applyPenalty(address staker, uint256 amount, string calldata reason) external override onlyPenalizer {
         if (amount == 0) revert AmountZero();
         if (amount > _stake[staker]) revert InsufficientStake();
-        _stake[staker] -= amount;
-        _totalStaked -= amount;
+        unchecked {
+            _stake[staker] -= amount;
+            _totalStaked -= amount;
+        }
         if (!token.transfer(owner, amount)) revert TransferFailed();
         emit PenaltyApplied(staker, amount, reason);
     }
@@ -76,8 +80,10 @@ contract StakingVault is IStakingVault {
     function slash(address staker, uint256 amount, string calldata reason) external override onlyPenalizer {
         if (amount == 0) revert AmountZero();
         if (amount > _stake[staker]) revert InsufficientStake();
-        _stake[staker] -= amount;
-        _totalStaked -= amount;
+        unchecked {
+            _stake[staker] -= amount;
+            _totalStaked -= amount;
+        }
         if (!token.transfer(owner, amount)) revert TransferFailed();
         emit SlashExecuted(staker, amount, reason);
     }

@@ -29,7 +29,8 @@ contract GovernanceDAO is IGovernanceDAO {
     function createProposal(string calldata description, uint256 votingPeriod) external override returns (uint256) {
         uint256 power = votingToken.balanceOf(msg.sender);
         if (power == 0) revert ZeroVotingPower();
-        uint256 id = _nextProposalId++;
+        uint256 id;
+        unchecked { id = _nextProposalId++; }
         uint256 start = block.timestamp;
         _proposals[id] = Proposal({
             proposalId: id,

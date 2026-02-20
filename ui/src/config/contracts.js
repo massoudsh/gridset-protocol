@@ -29,6 +29,7 @@ export function hasAnyAddress() {
 export const abis = {
   energyToken: [],
   energyMarket: [],
+  stakingVault: [],
 }
 
 // Inline minimal EnergyToken ABI
@@ -57,5 +58,8 @@ if (typeof window !== 'undefined' || typeof globalThis !== 'undefined') {
     { inputs: [{ name: 'timeSlot', type: 'uint256' }], name: 'getAuction', outputs: [auctionStruct], stateMutability: 'view', type: 'function' },
     { inputs: [{ name: 'timeSlot', type: 'uint256' }], name: 'getBestBid', outputs: [{ name: 'price', type: 'uint256' }, { name: 'quantity', type: 'uint256' }], stateMutability: 'view', type: 'function' },
     { inputs: [{ name: 'timeSlot', type: 'uint256' }], name: 'getBestAsk', outputs: [{ name: 'price', type: 'uint256' }, { name: 'quantity', type: 'uint256' }], stateMutability: 'view', type: 'function' },
+  ]
+  abis.stakingVault = [
+    { inputs: [], name: 'getTotalStaked', outputs: [{ type: 'uint256' }], stateMutability: 'view', type: 'function' },
   ]
 }

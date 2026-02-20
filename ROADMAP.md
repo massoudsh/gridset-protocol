@@ -152,16 +152,18 @@ Mainnet launch:
 ## Enhancement Issues
 
 ### Gas Optimization
-**Status:** 🔴 Not Started  
+**Status:** ✅ Completed  
 **Issue:** [#11](https://github.com/massoudsh/gridset-protocol/issues/11)
+- Unchecked blocks where overflow/underflow ruled out (EnergyToken, StakingVault, EnergyMarket, GovernanceDAO)
 
 ### Multi-chain Support
 **Status:** 🔴 Not Started  
 **Issue:** [#12](https://github.com/massoudsh/gridset-protocol/issues/12)
 
 ### Advanced Analytics Dashboard
-**Status:** 🔴 Not Started  
+**Status:** ✅ Completed  
 **Issue:** [#13](https://github.com/massoudsh/gridset-protocol/issues/13)
+- Dashboard (Overview) shows live Total Supply and Total Staked from contracts when addresses set
 
 ---
 
