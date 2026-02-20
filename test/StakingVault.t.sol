@@ -212,4 +212,15 @@ contract StakingVaultTest is Test {
         vm.stopPrank();
         assertEq(vault.getTotalStaked(), 800);
     }
+
+    /// @dev Fuzz: after deposit, getStake and getTotalStaked are consistent
+    function testFuzz_deposit_TotalStakedConsistent(uint256 amount) public {
+        amount = bound(amount, 1, 10_000);
+        vm.startPrank(alice);
+        token.approve(address(vault), amount);
+        vault.depositStake(amount);
+        vm.stopPrank();
+        assertEq(vault.getStake(alice), amount);
+        assertEq(vault.getTotalStaked(), amount);
+    }
 }

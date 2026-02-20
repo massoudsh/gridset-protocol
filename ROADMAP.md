@@ -86,17 +86,15 @@ Implement governance:
 ---
 
 ### Phase 6: Security Audit & Testing
-**Status:** 🟡 In Progress  
+**Status:** ✅ Completed (testing); audit/bounty when ready  
 **Priority:** Critical  
 **Estimated Duration:** 6-8 weeks  
 **Issue:** [#6](https://github.com/massoudsh/gridset-protocol/issues/6)
 
 Security measures:
-- Professional security audit (planned; not yet completed)
-- Formal verification (candidate for invariants; see SECURITY.md)
-- Comprehensive testing: **>95% line coverage** (130 tests, Forge); fuzz test for EnergyToken mint/supply
-- Bug bounty program (to be announced before mainnet)
-- SECURITY.md: reporting process, scope, pre-audit checklist
+- **Testing**: >95% line coverage; 131 tests (Forge); fuzz tests (EnergyToken, StakingVault); CI (`.github/workflows/ci.yml`) runs build, test, coverage on push/PR
+- **SECURITY.md**: reporting, scope, pre-audit checklist
+- Professional audit and bug bounty: to be scheduled before mainnet (see [MAINNET_CHECKLIST](docs/MAINNET_CHECKLIST.md))
 
 ---
 

@@ -30,8 +30,9 @@ Out of scope (unless otherwise stated):
 
 ## Audit status
 
-- **Phase 6** (Security Audit & Testing): In progress.
-- **Test coverage**: Forge ≥95% line coverage; 130 tests (unit/behavior + fuzz).
+- **Phase 6** (Security Audit & Testing): Testing complete; ready for external audit.
+- **Test coverage**: Forge ≥95% line coverage; 131 tests (unit/behavior + fuzz: EnergyToken mint/supply, StakingVault deposit/totalStaked).
+- **CI**: GitHub Actions run `forge build`, `forge test`, `forge coverage` on push/PR.
 - **Professional audit**: Not yet completed. Plan to engage an external auditor before mainnet.
 - **Bug bounty**: To be announced with scope and rewards before mainnet.
 
@@ -44,7 +45,7 @@ Out of scope (unless otherwise stated):
 - [x] Token semantics: EnergyToken lock/unlock and available vs locked balance respected in transfer/burn
 - [x] Settlement: finalize → settle ordering; pull-from-payers then push-to-receivers
 - [ ] Formal verification: not yet applied (candidate: invariants for token supply, stake totals)
-- [x] Fuzz/invariant tests: EnergyToken mint/supply consistency; more invariants optional
+- [x] Fuzz/invariant tests: EnergyToken mint/supply; StakingVault deposit/totalStaked consistency
 
 ## References
 
