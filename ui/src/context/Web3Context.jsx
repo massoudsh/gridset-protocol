@@ -1,5 +1,6 @@
-import { createContext, useContext, useState, useEffect } from 'react'
+import { createContext, useContext, useState, useEffect, useMemo } from 'react'
 import { ethers } from 'ethers'
+import { contractAddresses, abis, hasAnyAddress } from '../config/contracts'
 
 const Web3Context = createContext()
 
@@ -9,6 +10,18 @@ export function Web3Provider({ children }) {
   const [signer, setSigner] = useState(null)
   const [isConnected, setIsConnected] = useState(false)
   const [chainId, setChainId] = useState(null)
+
+  const contracts = useMemo(() => {
+    const addr = contractAddresses.energyToken
+    if (!addr || !addr.startsWith('0x') || addr.length < 40) return { energyToken: null }
+    const abi = abis.energyToken
+    if (!abi || abi.length === 0) return { energyToken: null }
+    return {
+      energyToken: provider
+        ? (signer ? new ethers.Contract(addr, abi, signer) : new ethers.Contract(addr, abi, provider))
+        : null,
+    }
+  }, [provider, signer])
 
   const connectWallet = async () => {
     if (typeof window !== 'undefined' && typeof window.ethereum !== 'undefined') {
@@ -78,6 +91,9 @@ export function Web3Provider({ children }) {
         chainId,
         connectWallet,
         disconnectWallet,
+        contracts,
+        contractAddresses,
+        hasContractAddresses: hasAnyAddress(),
       }}
     >
       {children}

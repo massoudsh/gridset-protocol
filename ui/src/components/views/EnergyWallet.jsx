@@ -1,17 +1,44 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
+import { ethers } from 'ethers'
 import { Wallet, Lock, Unlock, Send, ArrowRightLeft } from 'lucide-react'
 import { useWeb3 } from '../../context/Web3Context'
 
 export default function EnergyWallet() {
-  const { isConnected, account } = useWeb3()
+  const { isConnected, account, contracts } = useWeb3()
   const [transferTo, setTransferTo] = useState('')
   const [transferAmount, setTransferAmount] = useState('')
+  const [balance, setBalance] = useState({ total: 0, available: 0, locked: 0 })
+  const [balanceLoading, setBalanceLoading] = useState(false)
 
-  const mockBalance = {
-    total: 1250.5,
-    available: 980.3,
-    locked: 270.2,
-  }
+  useEffect(() => {
+    if (!contracts?.energyToken || !account) {
+      setBalance({ total: 0, available: 0, locked: 0 })
+      return
+    }
+    let cancelled = false
+    setBalanceLoading(true)
+    contracts.energyToken
+      .getEnergyBalance(account)
+      .then((b) => {
+        if (!cancelled)
+          setBalance({
+            total: Number(ethers.formatEther(b.total)),
+            available: Number(ethers.formatEther(b.available)),
+            locked: Number(ethers.formatEther(b.locked)),
+          })
+      })
+      .catch(() => {
+        if (!cancelled) setBalance({ total: 0, available: 0, locked: 0 })
+      })
+      .finally(() => {
+        if (!cancelled) setBalanceLoading(false)
+      })
+    return () => { cancelled = true }
+  }, [contracts?.energyToken, account])
+
+  const displayBalance = contracts?.energyToken
+    ? balance
+    : { total: 1250.5, available: 980.3, locked: 270.2 }
 
   const mockTransactions = [
     {
@@ -37,12 +64,28 @@ export default function EnergyWallet() {
     },
   ]
 
-  const handleTransfer = () => {
+  const handleTransfer = async () => {
     if (!isConnected) {
       alert('Please connect your wallet first')
       return
     }
-    // TODO: Implement contract interaction
+    if (contracts?.energyToken && transferTo && transferAmount) {
+      try {
+        const tx = await contracts.energyToken.transfer(transferTo, ethers.parseEther(String(transferAmount)))
+        await tx.wait()
+        const b = await contracts.energyToken.getEnergyBalance(account)
+        setBalance({
+          total: Number(ethers.formatEther(b.total)),
+          available: Number(ethers.formatEther(b.available)),
+          locked: Number(ethers.formatEther(b.locked)),
+        })
+        setTransferTo('')
+        setTransferAmount('')
+      } catch (e) {
+        alert('Transfer failed: ' + (e.message || e))
+      }
+      return
+    }
     alert(`Transferring ${transferAmount} kWh to ${transferTo}`)
   }
 
@@ -67,7 +110,9 @@ export default function EnergyWallet() {
             <Wallet className="w-6 h-6 text-energy-green" />
             <h3 className="text-gray-400">Total Balance</h3>
           </div>
-          <p className="text-3xl font-bold text-white">{mockBalance.total.toFixed(2)}</p>
+          <p className="text-3xl font-bold text-white">
+            {balanceLoading ? '…' : displayBalance.total.toFixed(2)}
+          </p>
           <p className="text-gray-400 text-sm mt-1">kWh</p>
         </div>
 
@@ -76,7 +121,9 @@ export default function EnergyWallet() {
             <Unlock className="w-6 h-6 text-energy-blue" />
             <h3 className="text-gray-400">Available</h3>
           </div>
-          <p className="text-3xl font-bold text-white">{mockBalance.available.toFixed(2)}</p>
+          <p className="text-3xl font-bold text-white">
+            {balanceLoading ? '…' : displayBalance.available.toFixed(2)}
+          </p>
           <p className="text-gray-400 text-sm mt-1">kWh</p>
         </div>
 
@@ -85,7 +132,9 @@ export default function EnergyWallet() {
             <Lock className="w-6 h-6 text-energy-yellow" />
             <h3 className="text-gray-400">Locked</h3>
           </div>
-          <p className="text-3xl font-bold text-white">{mockBalance.locked.toFixed(2)}</p>
+          <p className="text-3xl font-bold text-white">
+            {balanceLoading ? '…' : displayBalance.locked.toFixed(2)}
+          </p>
           <p className="text-gray-400 text-sm mt-1">kWh</p>
         </div>
       </div>

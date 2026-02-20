@@ -2,7 +2,7 @@ import { Settings as SettingsIcon, Network, Wallet, Bell } from 'lucide-react'
 import { useWeb3 } from '../../context/Web3Context'
 
 export default function Settings() {
-  const { isConnected, chainId, account } = useWeb3()
+  const { isConnected, chainId, account, contractAddresses, hasContractAddresses } = useWeb3()
 
   return (
     <div className="space-y-6">
@@ -52,23 +52,14 @@ export default function Settings() {
               </div>
             </div>
             <div>
-              <label className="block text-sm text-gray-400 mb-2">Contract Addresses</label>
+              <label className="block text-sm text-gray-400 mb-2">Contract Addresses (from .env)</label>
+              {!hasContractAddresses && (
+                <p className="text-amber-500/90 text-sm mb-2">Set VITE_*_ADDRESS in ui/.env — see ui/.env.example</p>
+              )}
               <div className="space-y-2">
-                <input
-                  type="text"
-                  placeholder="EnergyToken Address"
-                  className="input-field w-full text-sm"
-                />
-                <input
-                  type="text"
-                  placeholder="EnergyMarket Address"
-                  className="input-field w-full text-sm"
-                />
-                <input
-                  type="text"
-                  placeholder="PanelRegistry Address"
-                  className="input-field w-full text-sm"
-                />
+                <input readOnly value={contractAddresses?.energyToken || ''} placeholder="EnergyToken" className="input-field w-full text-sm bg-gray-800/80" />
+                <input readOnly value={contractAddresses?.energyMarket || ''} placeholder="EnergyMarket" className="input-field w-full text-sm bg-gray-800/80" />
+                <input readOnly value={contractAddresses?.panelRegistry || ''} placeholder="PanelRegistry" className="input-field w-full text-sm bg-gray-800/80" />
               </div>
             </div>
           </div>
