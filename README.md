@@ -75,13 +75,19 @@ gridset-protocol/
 │   ├── EnergyMarket.sol
 │   ├── SettlementEngine.sol
 │   └── GovernanceDAO.sol
-├── test/                    # Test files
+├── test/                    # Forge tests (130 tests, >95% line coverage)
+├── script/
+│   └── Deploy.s.sol         # Deploy full suite (Anvil/testnet/mainnet)
 ├── docs/
-│   └── architecture.md      # System architecture documentation
-├── ui/                      # Web UI application
+│   ├── architecture.md      # System architecture
+│   ├── GETTING_STARTED.md   # Clone → build → test → deploy → UI
+│   ├── DEPLOYMENT.md        # Deployment order, env vars, post-deploy
+│   └── NEW_ISSUES.md        # Backlog
+├── ui/                      # React + Vite web UI
 │   └── src/
-│       ├── components/      # React components
-│       └── context/         # Web3 context
+│       ├── components/      # Views (Dashboard, Energy Wallet, Market, etc.)
+│       ├── context/         # Web3Context (contracts, addresses)
+│       └── config/          # Contract addresses & ABIs from env
 └── foundry.toml             # Foundry configuration
 ```
 
@@ -114,7 +120,7 @@ npm install
 npm run dev
 ```
 
-The UI will open at `http://localhost:3000` and includes:
+The UI will open at `http://localhost:5173` (or the URL Vite prints) and includes:
 - Energy dashboard with real-time metrics
 - Energy market with order book visualization
 - Panel registry management
@@ -125,14 +131,25 @@ The UI will open at `http://localhost:3000` and includes:
 
 See `ui/README.md` for more details.
 
+### Deploy locally
+
+See **[docs/GETTING_STARTED.md](docs/GETTING_STARTED.md)** for the full flow. Quick version:
+
+```bash
+anvil
+# In another terminal:
+forge script script/Deploy.s.sol --rpc-url http://127.0.0.1:8545 --broadcast
+# Copy logged addresses into ui/.env (see ui/.env.example), then:
+cd ui && npm install && npm run dev
+```
+
 ### Current Status
 
-This is a bootstrap implementation with:
-- ✅ Interface definitions (events, structs, function signatures)
-- ✅ Placeholder implementations (all functions revert with "NOT_IMPLEMENTED")
-- ✅ Test suite (asserts NOT_IMPLEMENTED reverts)
-- ✅ Architecture documentation
-- ⏳ Full implementations (to be developed)
+- ✅ **Contracts**: EnergyToken, PanelNFT, PanelRegistry, StakingVault, EnergyOracle, EnergyMarket, SettlementEngine, GovernanceDAO (full implementations)
+- ✅ **Tests**: 130 Forge tests, >95% line coverage; fuzz test for EnergyToken
+- ✅ **UI**: Dashboard, Energy Wallet (balance/transfer), Energy Market (live order book), Panel Registry, Staking, Governance, Settlement, Utilities; contract wiring via env
+- ✅ **Deployment**: `script/Deploy.s.sol` for local/testnet/mainnet; [docs/DEPLOYMENT.md](docs/DEPLOYMENT.md)
+- ✅ **Docs**: [GETTING_STARTED](docs/GETTING_STARTED.md), [DEPLOYMENT](docs/DEPLOYMENT.md), [ROADMAP](ROADMAP.md), [SECURITY](SECURITY.md)
 
 ## License
 

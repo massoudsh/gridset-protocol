@@ -115,16 +115,15 @@ UI improvements:
 ---
 
 ### Phase 8: Documentation & Developer Tools
-**Status:** 🔴 Not Started  
+**Status:** 🟡 In Progress  
 **Priority:** Medium  
 **Estimated Duration:** 2-3 weeks  
 **Issue:** [#8](https://github.com/massoudsh/gridset-protocol/issues/8)
 
 Developer resources:
-- Comprehensive documentation
-- SDK development
-- Deployment tools
-- Tutorials and guides
+- **Documentation**: [docs/GETTING_STARTED.md](docs/GETTING_STARTED.md) (clone → build → test → deploy → UI), [docs/DEPLOYMENT.md](docs/DEPLOYMENT.md) (order, env, post-deploy, programmatic use); README updated with status and deploy quick start
+- **Deployment tools**: `script/Deploy.s.sol` – one-command deploy (Anvil/testnet/mainnet), logs addresses for UI .env
+- **Tutorials**: GETTING_STARTED walkthrough; SDK/package optional (see docs/NEW_ISSUES.md NEW-10)
 
 ---
 
