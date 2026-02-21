@@ -1,8 +1,9 @@
 import { useState, useEffect } from 'react'
 import { ethers } from 'ethers'
-import { Zap, TrendingUp, Sun, DollarSign, Clock, Activity } from 'lucide-react'
+import { Zap, TrendingUp, Sun, DollarSign, Clock, Activity, Sparkles, X } from 'lucide-react'
 import { LineChart, Line, AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts'
 import { useWeb3 } from '../../context/Web3Context'
+import { useDemo } from '../../context/DemoContext'
 
 const mockEnergyData = [
   { time: '00:00', production: 120, consumption: 80, price: 0.05 },
@@ -22,71 +23,103 @@ const mockPriceData = [
   { time: '20:00', price: 0.05 },
 ]
 
+const DEFAULT_SLOT_FOR_PRICE = 1000
+
+const ONBOARDING_DISMISSED_KEY = 'gridset-onboarding-dismissed'
+
 export default function Overview({ setActiveView }) {
-  const { isConnected, account, contracts } = useWeb3()
-  const [chainMetrics, setChainMetrics] = useState({ totalSupply: null, totalStaked: null })
+  const { account, contracts } = useWeb3()
+  const { isDemoMode } = useDemo()
+  const [onboardingDismissed, setOnboardingDismissed] = useState(() => {
+    try { return localStorage.getItem(ONBOARDING_DISMISSED_KEY) === '1' } catch { return false }
+  })
+  const [chainMetrics, setChainMetrics] = useState({
+    totalSupply: null,
+    totalStaked: null,
+    registeredPanelsCount: null,
+    lastClearingPrice: null,
+  })
+  const [metricsLoading, setMetricsLoading] = useState(false)
 
   useEffect(() => {
-    if (!contracts?.energyToken && !contracts?.stakingVault) {
-      setChainMetrics({ totalSupply: null, totalStaked: null })
+    const hasAny = contracts?.energyToken || contracts?.stakingVault || contracts?.panelRegistry || contracts?.energyMarket
+    if (!hasAny) {
+      setChainMetrics({ totalSupply: null, totalStaked: null, registeredPanelsCount: null, lastClearingPrice: null })
       return
     }
     let cancelled = false
+    setMetricsLoading(true)
     const load = async () => {
       try {
-        const [supply, staked] = await Promise.all([
+        const [supply, staked, panels, auction] = await Promise.all([
           contracts.energyToken ? contracts.energyToken.totalSupply() : Promise.resolve(null),
           contracts.stakingVault ? contracts.stakingVault.getTotalStaked() : Promise.resolve(null),
+          contracts.panelRegistry ? contracts.panelRegistry.getRegisteredPanels().then((arr) => (arr?.length ?? 0)) : Promise.resolve(null),
+          contracts.energyMarket ? contracts.energyMarket.getAuction(DEFAULT_SLOT_FOR_PRICE).catch(() => null) : Promise.resolve(null),
         ])
         if (cancelled) return
+        let clearingPrice = null
+        if (auction?.isCleared && auction?.clearingPrice != null) {
+          const raw = Number(auction.clearingPrice)
+          clearingPrice = raw >= 1e10 ? Number(ethers.formatEther(auction.clearingPrice)) : raw
+        }
         setChainMetrics({
           totalSupply: supply != null ? Number(ethers.formatEther(supply)) : null,
           totalStaked: staked != null ? Number(ethers.formatEther(staked)) : null,
+          registeredPanelsCount: panels != null ? panels : null,
+          lastClearingPrice: clearingPrice,
         })
       } catch {
-        if (!cancelled) setChainMetrics({ totalSupply: null, totalStaked: null })
+        if (!cancelled) setChainMetrics({ totalSupply: null, totalStaked: null, registeredPanelsCount: null, lastClearingPrice: null })
+      } finally {
+        if (!cancelled) setMetricsLoading(false)
       }
     }
     load()
     return () => { cancelled = true }
-  }, [contracts?.energyToken, contracts?.stakingVault])
+  }, [contracts?.energyToken, contracts?.stakingVault, contracts?.panelRegistry, contracts?.energyMarket])
 
   const formatMetric = (n) => (n == null ? null : n >= 1e6 ? `${(n / 1e6).toFixed(2)}M` : n >= 1e3 ? `${(n / 1e3).toFixed(2)}K` : n.toFixed(2))
 
   const metrics = [
     {
       title: 'Total Supply (GRID)',
-      value: chainMetrics.totalSupply != null ? `${formatMetric(chainMetrics.totalSupply)}` : '1,245 kWh',
-      change: chainMetrics.totalSupply != null ? 'Live' : '+12.5%',
+      value: chainMetrics.totalSupply != null ? `${formatMetric(chainMetrics.totalSupply)}` : '—',
+      change: chainMetrics.totalSupply != null ? 'Live' : null,
       icon: Zap,
       color: 'text-energy-green',
       bgColor: 'bg-energy-green/20',
     },
     {
-      title: 'Market Price',
-      value: '$0.067/kWh',
-      change: '+3.2%',
+      title: 'Last Clearing Price',
+      value: chainMetrics.lastClearingPrice != null ? `${chainMetrics.lastClearingPrice} (slot #${DEFAULT_SLOT_FOR_PRICE})` : '—',
+      change: chainMetrics.lastClearingPrice != null ? 'Live' : null,
       icon: TrendingUp,
       color: 'text-energy-blue',
       bgColor: 'bg-energy-blue/20',
     },
     {
-      title: 'Active Panels',
-      value: '342',
-      change: '+5',
+      title: 'Registered Panels',
+      value: chainMetrics.registeredPanelsCount != null ? String(chainMetrics.registeredPanelsCount) : '—',
+      change: chainMetrics.registeredPanelsCount != null ? 'Live' : null,
       icon: Sun,
       color: 'text-energy-yellow',
       bgColor: 'bg-energy-yellow/20',
     },
     {
       title: 'Total Staked (GRID)',
-      value: chainMetrics.totalStaked != null ? `${formatMetric(chainMetrics.totalStaked)}` : '2.4M GRID',
-      change: chainMetrics.totalStaked != null ? 'Live' : '+8.1%',
+      value: chainMetrics.totalStaked != null ? `${formatMetric(chainMetrics.totalStaked)}` : '—',
+      change: chainMetrics.totalStaked != null ? 'Live' : null,
       icon: DollarSign,
       color: 'text-energy-orange',
       bgColor: 'bg-energy-orange/20',
     },
   ]
+
+  const dismissOnboarding = () => {
+    setOnboardingDismissed(true)
+    try { localStorage.setItem(ONBOARDING_DISMISSED_KEY, '1') } catch {}
+  }
 
   return (
     <div className="space-y-6">
@@ -95,13 +128,32 @@ export default function Overview({ setActiveView }) {
         <p className="text-gray-400">Real-time overview of the GRIDSET Protocol</p>
       </div>
 
-      {!isConnected && (
-        <div className="card bg-energy-blue/10 border-energy-blue/50">
-          <div className="flex items-center gap-3">
-            <Activity className="w-5 h-5 text-energy-blue" />
-            <p className="text-energy-blue">
-              Connect your wallet to view personalized data and interact with the protocol
-            </p>
+      {isDemoMode && !onboardingDismissed && (
+        <div className="card bg-energy-green/10 border-energy-green/30 relative">
+          <button
+            type="button"
+            onClick={dismissOnboarding}
+            className="absolute top-3 right-3 p-1.5 rounded-lg hover:bg-white/10 text-gray-400 hover:text-white"
+            aria-label="Dismiss"
+          >
+            <X className="w-4 h-4" />
+          </button>
+          <div className="flex gap-4">
+            <div className="p-3 rounded-lg bg-energy-green/20 shrink-0">
+              <Sparkles className="w-8 h-8 text-energy-green" />
+            </div>
+            <div>
+              <h3 className="text-lg font-semibold text-white mb-1">Welcome — you’re in demo mode</h3>
+              <p className="text-gray-300 text-sm mb-3">
+                Try the app without a wallet. Your balance and orders are simulated. When you’re ready, connect a wallet for testnet or mainnet.
+              </p>
+              <ul className="text-sm text-gray-400 space-y-1 mb-4">
+                <li>• <button type="button" onClick={() => setActiveView?.('market')} className="text-energy-green hover:underline">Energy Market</button> — place a bid or ask (use “Place order (demo)” and confirm)</li>
+                <li>• <button type="button" onClick={() => setActiveView?.('wallet')} className="text-energy-green hover:underline">Energy Wallet</button> — view balance and send GRID</li>
+                <li>• <button type="button" onClick={() => setActiveView?.('utilities')} className="text-energy-green hover:underline">Utilities</button> — browse products and add to cart</li>
+              </ul>
+              <p className="text-xs text-gray-500">Connect your wallet in the header when you’re ready for real chains.</p>
+            </div>
           </div>
         </div>
       )}
@@ -115,10 +167,10 @@ export default function Overview({ setActiveView }) {
                 <div className={`p-3 rounded-lg ${metric.bgColor}`}>
                   <Icon className={`w-6 h-6 ${metric.color}`} />
                 </div>
-                <span className="text-energy-green text-sm font-semibold">{metric.change}</span>
+                {metricsLoading ? <span className="text-gray-500 text-sm">…</span> : metric.change && <span className="text-energy-green text-sm font-semibold">{metric.change}</span>}
               </div>
               <h3 className="text-gray-400 text-sm mb-1">{metric.title}</h3>
-              <p className="text-2xl font-bold text-white">{metric.value}</p>
+              <p className="text-2xl font-bold text-white">{metricsLoading && metric.value === '—' ? '…' : metric.value}</p>
             </div>
           )
         })}

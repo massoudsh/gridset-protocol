@@ -7,6 +7,7 @@ import {
   Gauge, 
   Lock, 
   FileText,
+  Activity,
   Settings
 } from 'lucide-react'
 
@@ -19,6 +20,7 @@ const menuItems = [
   { id: 'settlement', label: 'Settlement', icon: Gauge },
   { id: 'staking', label: 'Staking Vault', icon: Lock },
   { id: 'governance', label: 'Governance', icon: FileText },
+  { id: 'activity', label: 'Activity', icon: Activity },
   { id: 'settings', label: 'Settings', icon: Settings },
 ]
 

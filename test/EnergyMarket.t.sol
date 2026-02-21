@@ -3,9 +3,11 @@ pragma solidity ^0.8.20;
 
 import {Test} from "forge-std/Test.sol";
 import {EnergyMarket} from "../src/EnergyMarket.sol";
+import {EnergyToken} from "../src/EnergyToken.sol";
 import {IEnergyMarket} from "../src/interfaces/IEnergyMarket.sol";
 
 contract EnergyMarketTest is Test {
+    EnergyToken public token;
     EnergyMarket public market;
 
     address public owner;
@@ -16,10 +18,15 @@ contract EnergyMarketTest is Test {
     uint256 public constant DURATION = 3600;
 
     function setUp() public {
-        market = new EnergyMarket();
+        token = new EnergyToken();
+        market = new EnergyMarket(token);
+        token.setLocker(address(market), true);
+        token.setMinter(address(this), true);
         owner = address(this);
         alice = makeAddr("alice");
         bob = makeAddr("bob");
+        token.mint(alice, 1_000_000);
+        token.mint(bob, 1_000_000);
     }
 
     function test_startAuction_OnlyOwner() public {
@@ -206,5 +213,28 @@ contract EnergyMarketTest is Test {
         assertEq(o.price, 100);
         assertEq(o.quantity, 50);
         assertEq(o.timeSlot, SLOT);
+    }
+
+    function test_setPaused_RevertsStartAuction() public {
+        market.setPaused(true);
+        vm.expectRevert(EnergyMarket.MarketPaused.selector);
+        market.startAuction(SLOT, DURATION);
+    }
+
+    function test_setPaused_RevertsPlaceBid() public {
+        market.startAuction(SLOT, DURATION);
+        market.setPaused(true);
+        vm.prank(alice);
+        vm.expectRevert(EnergyMarket.MarketPaused.selector);
+        market.placeBid(SLOT, 100, 50);
+    }
+
+    function test_setPaused_UnpausedWorks() public {
+        market.setPaused(true);
+        market.setPaused(false);
+        market.startAuction(SLOT, DURATION);
+        vm.prank(alice);
+        market.placeBid(SLOT, 100, 50);
+        assertEq(market.getOrder(1).trader, alice);
     }
 }

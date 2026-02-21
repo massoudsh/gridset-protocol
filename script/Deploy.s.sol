@@ -32,19 +32,22 @@ contract Deploy is Script {
         PanelRegistry panelRegistry = new PanelRegistry();
         StakingVault stakingVault = new StakingVault(token);
         EnergyOracle energyOracle = new EnergyOracle();
-        EnergyMarket energyMarket = new EnergyMarket();
+        EnergyMarket energyMarket = new EnergyMarket(token);
         SettlementEngine settlementEngine = new SettlementEngine(token, energyMarket);
         GovernanceDAO governanceDAO = new GovernanceDAO(token);
 
         // Optional: set deployer as minter/registrar for local testing
         address deployer = vm.addr(deployerPrivateKey);
         token.setMinter(deployer, true);
-        token.setLocker(address(settlementEngine), true); // SettlementEngine locks/unlocks for market
+        token.setLocker(address(settlementEngine), true);
+        token.setLocker(address(energyMarket), true); // EnergyMarket locks/unlocks on placeBid/placeAsk/clear/cancel
         panelNFT.setMinter(deployer, true);
+        panelRegistry.setPanelNFT(address(panelNFT));
         panelRegistry.setRegistrar(deployer, true);
         panelRegistry.setReporter(deployer, true);
         stakingVault.setPenalizer(deployer, true);
         settlementEngine.setPenalizer(deployer, true);
+        // Optional: energyOracle.setConfirmer(confirmerAddr) for two-step finalization (confirm then finalize); see DEPLOYMENT.md
 
         vm.stopBroadcast();
 

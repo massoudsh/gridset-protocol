@@ -52,4 +52,30 @@ contract EnergyOracleTest is Test {
         vm.expectRevert(EnergyOracle.SlotAlreadyFinalized.selector);
         oracle.finalizeTimeSlot(slot0);
     }
+
+    function test_confirmThenFinalize_WhenConfirmerSet() public {
+        address confirmerAddr = makeAddr("confirmer");
+        oracle.setConfirmer(confirmerAddr);
+        oracle.reportProduction(1, slot0, 200);
+        vm.prank(confirmerAddr);
+        oracle.confirmTimeSlot(slot0);
+        assertTrue(oracle.isTimeSlotConfirmed(slot0));
+        oracle.finalizeTimeSlot(slot0);
+        assertTrue(oracle.isTimeSlotFinalized(slot0));
+    }
+
+    function test_finalizeTimeSlot_RevertsWhenConfirmerSetButNotConfirmed() public {
+        oracle.setConfirmer(makeAddr("confirmer"));
+        oracle.reportProduction(1, slot0, 200);
+        vm.expectRevert(EnergyOracle.SlotNotConfirmed.selector);
+        oracle.finalizeTimeSlot(slot0);
+    }
+
+    function test_confirmTimeSlot_OnlyConfirmerOrOwner() public {
+        address confirmerAddr = makeAddr("confirmer");
+        oracle.setConfirmer(confirmerAddr);
+        vm.prank(address(0x99));
+        vm.expectRevert(EnergyOracle.Unauthorized.selector);
+        oracle.confirmTimeSlot(slot0);
+    }
 }

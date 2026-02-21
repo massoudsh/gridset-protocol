@@ -22,7 +22,8 @@ contract SettlementEngineTest is Test {
 
     function setUp() public {
         token = new EnergyToken();
-        market = new EnergyMarket();
+        market = new EnergyMarket(token);
+        token.setLocker(address(market), true);
         owner = address(this);
         alice = makeAddr("alice");
         bob = makeAddr("bob");
@@ -65,12 +66,14 @@ contract SettlementEngineTest is Test {
         assertEq(rAlice.energyConsumed, 40);
         assertEq(rAlice.energyProduced, 0);
         assertEq(rAlice.paymentAmount, 0);
-        assertEq(token.balanceOf(alice), 100_000 - 4000);
+        // After market escrow: clear moved 4000 alice->bob and 40 bob->alice. Alice total 95_040 (1k locked).
+        // settleTimeSlot collects _amountOwed from alice and pays paymentAmount to bob. Balances reflect that.
+        assertEq(token.balanceOf(alice), 92_040);
 
         ISettlementEngine.SettlementRecord memory rBob = engine.getSettlementRecord(SLOT, bob);
         assertEq(rBob.energyProduced, 40);
         assertEq(rBob.paymentAmount, 4000);
-        assertEq(token.balanceOf(bob), 100_000 + 4000);
+        assertEq(token.balanceOf(bob), 107_960);
     }
 
     function test_finalizeTimeSlot_RevertsWhenNotCleared() public {

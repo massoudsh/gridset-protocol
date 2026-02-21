@@ -11,16 +11,18 @@ Dependencies (deploy first):
 3. **PanelRegistry** – no dependencies
 4. **StakingVault** – requires `IEnergyToken`
 5. **EnergyOracle** – no dependencies
-6. **EnergyMarket** – no dependencies
+6. **EnergyMarket** – requires `IEnergyToken` (for escrow: lock on placeBid/placeAsk, transferLocked on clear)
 7. **SettlementEngine** – requires `IEnergyToken`, `IEnergyMarket`
 8. **GovernanceDAO** – requires `IEnergyToken`
 
 The Forge script `script/Deploy.s.sol` deploys in this order and then:
 
 - Sets the deployer as **minter** on EnergyToken and PanelNFT
-- Sets **SettlementEngine** as **locker** on EnergyToken (for market lock/unlock)
+- Sets **SettlementEngine** and **EnergyMarket** as **lockers** on EnergyToken (market escrow: lock/unlock/transferLocked on place, cancel, clear)
+- Sets **PanelNFT** address on PanelRegistry (`setPanelNFT`) so only the current NFT owner can be registered as panel owner
 - Sets the deployer as **registrar** and **reporter** on PanelRegistry
 - Sets the deployer as **penalizer** on StakingVault and SettlementEngine
+- **EnergyOracle:** Optional two-step finalization: call `energyOracle.setConfirmer(confirmerAddress)` so that `finalizeTimeSlot` requires `confirmTimeSlot(slot)` first. See [ORACLE_TRUST_MODEL.md](ORACLE_TRUST_MODEL.md).
 
 ## Running the deploy script
 
@@ -92,9 +94,9 @@ Then open the UI Energy Market, set time slot to **1000**, and use Refresh to se
 1. **Deploy** (need Sepolia ETH: [faucet](https://sepoliafaucet.com/)):
    ```bash
    export PRIVATE_KEY=0x...
-   forge script script/Deploy.s.sol --rpc-url https://sepolia.infura.io/v3/YOUR_KEY --broadcast
+   forge script script/Deploy.s.sol --rpc-url https://ethereum-sepolia-rpc.publicnode.com --broadcast
    ```
-2. **Copy** the logged addresses into `ui/.env` (keys from table above). Restart the UI.
+2. **Copy** the logged addresses into `ui/.env` (keys from table above) if not already set. If deploy failed with "insufficient funds", get Sepolia ETH and re-run; addresses are deterministic. Restart the UI.
 3. **Share** app URL + “Switch to Sepolia (11155111) and get test ETH at [faucet].”
 
 See [RELEASE_READINESS.md](RELEASE_READINESS.md) for the full testnet checklist.

@@ -3,20 +3,28 @@ pragma solidity ^0.8.20;
 
 import {Test} from "forge-std/Test.sol";
 import {PanelRegistry} from "../src/PanelRegistry.sol";
+import {PanelNFT} from "../src/PanelNFT.sol";
 import {IPanelRegistry} from "../src/interfaces/IPanelRegistry.sol";
 
 contract PanelRegistryTest is Test {
     PanelRegistry public registry;
+    PanelNFT public panelNFT;
 
     address public owner;
     address public registrar;
     address public reporter;
+    address public alice;
+    address public bob;
 
     function setUp() public {
         registry = new PanelRegistry();
+        panelNFT = new PanelNFT();
         owner = address(this);
         registrar = makeAddr("registrar");
         reporter = makeAddr("reporter");
+        alice = makeAddr("alice");
+        bob = makeAddr("bob");
+        panelNFT.setMinter(owner, true);
         registry.setRegistrar(registrar, true);
         registry.setReporter(reporter, true);
     }
@@ -31,6 +39,29 @@ contract PanelRegistryTest is Test {
         assertEq(r.capacityWatt, 5000);
         assertEq(r.totalEnergyProduced, 0);
         assertTrue(r.isRegistered);
+    }
+
+    function test_registerPanel_WhenPanelNFTSet_RequiresNFTOwner() public {
+        registry.setPanelNFT(address(panelNFT));
+        panelNFT.mint(alice, "ipfs://meta/1", 5000);
+        vm.prank(registrar);
+        registry.registerPanel(1, alice, 5000);
+        assertTrue(registry.isRegistered(1));
+        assertEq(registry.getPanelRecord(1).owner, alice);
+    }
+
+    function test_registerPanel_WhenPanelNFTSet_RevertsWhenNotNFTOwner() public {
+        registry.setPanelNFT(address(panelNFT));
+        panelNFT.mint(alice, "ipfs://meta/1", 5000);
+        vm.prank(registrar);
+        vm.expectRevert(PanelRegistry.NotPanelNFTOwner.selector);
+        registry.registerPanel(1, bob, 5000);
+    }
+
+    function test_registerPanel_WhenPanelNFTNotSet_AllowsAnyOwner() public {
+        vm.prank(registrar);
+        registry.registerPanel(1, address(0x1), 5000);
+        assertEq(registry.getPanelRecord(1).owner, address(0x1));
     }
 
     function test_reportProduction_Success() public {

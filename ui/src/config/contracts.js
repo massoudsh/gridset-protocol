@@ -30,6 +30,10 @@ export const abis = {
   energyToken: [],
   energyMarket: [],
   stakingVault: [],
+  panelRegistry: [],
+  settlementEngine: [],
+  governanceDAO: [],
+  energyOracle: [],
 }
 
 // Inline minimal EnergyToken ABI
@@ -42,6 +46,19 @@ if (typeof window !== 'undefined' || typeof globalThis !== 'undefined') {
     { inputs: [{ name: 'spender', type: 'address' }, { name: 'amount', type: 'uint256' }], name: 'approve', outputs: [{ type: 'bool' }], stateMutability: 'nonpayable', type: 'function' },
   ]
   // EnergyMarket: read-only auction summary
+  const orderStruct = {
+    components: [
+      { name: 'orderId', type: 'uint256' },
+      { name: 'trader', type: 'address' },
+      { name: 'isBid', type: 'bool' },
+      { name: 'price', type: 'uint256' },
+      { name: 'quantity', type: 'uint256' },
+      { name: 'filledQuantity', type: 'uint256' },
+      { name: 'timeSlot', type: 'uint256' },
+      { name: 'isActive', type: 'bool' },
+    ],
+    type: 'tuple',
+  }
   const auctionStruct = {
     components: [
       { name: 'timeSlot', type: 'uint256' },
@@ -58,8 +75,24 @@ if (typeof window !== 'undefined' || typeof globalThis !== 'undefined') {
     { inputs: [{ name: 'timeSlot', type: 'uint256' }], name: 'getAuction', outputs: [auctionStruct], stateMutability: 'view', type: 'function' },
     { inputs: [{ name: 'timeSlot', type: 'uint256' }], name: 'getBestBid', outputs: [{ name: 'price', type: 'uint256' }, { name: 'quantity', type: 'uint256' }], stateMutability: 'view', type: 'function' },
     { inputs: [{ name: 'timeSlot', type: 'uint256' }], name: 'getBestAsk', outputs: [{ name: 'price', type: 'uint256' }, { name: 'quantity', type: 'uint256' }], stateMutability: 'view', type: 'function' },
+    { inputs: [{ name: 'timeSlot', type: 'uint256' }], name: 'getOrderBook', outputs: [{ type: 'tuple[]', components: orderStruct.components }, { type: 'tuple[]', components: orderStruct.components }], stateMutability: 'view', type: 'function' },
+    { type: 'event', name: 'AuctionCleared', inputs: [{ name: 'timeSlot', type: 'uint256', indexed: true }, { name: 'clearingPrice', type: 'uint256', indexed: false }, { name: 'totalQuantity', type: 'uint256', indexed: false }] },
+    { type: 'event', name: 'OrderPlaced', inputs: [{ name: 'orderId', type: 'uint256', indexed: true }, { name: 'trader', type: 'address', indexed: true }, { name: 'isBid', type: 'bool', indexed: false }, { name: 'price', type: 'uint256', indexed: false }, { name: 'quantity', type: 'uint256', indexed: false }] },
   ]
   abis.stakingVault = [
     { inputs: [], name: 'getTotalStaked', outputs: [{ type: 'uint256' }], stateMutability: 'view', type: 'function' },
+  ]
+  abis.panelRegistry = [
+    { inputs: [], name: 'getRegisteredPanels', outputs: [{ type: 'uint256[]' }], stateMutability: 'view', type: 'function' },
+  ]
+  // Optional: add more methods when views need them (getTimeSlotSettlement, getProposal, getTotalProductionInSlot, etc.)
+  abis.settlementEngine = [
+    { inputs: [{ name: 'timeSlot', type: 'uint256' }], name: 'getTimeSlotSettlement', outputs: [{ components: [{ name: 'timeSlot', type: 'uint256' }, { name: 'clearingPrice', type: 'uint256' }, { name: 'totalEnergy', type: 'uint256' }, { name: 'totalPayment', type: 'uint256' }, { name: 'isFinalized', type: 'bool' }], type: 'tuple' }], stateMutability: 'view', type: 'function' },
+  ]
+  abis.governanceDAO = [
+    { inputs: [{ name: 'voter', type: 'address' }], name: 'getVotingPower', outputs: [{ type: 'uint256' }], stateMutability: 'view', type: 'function' },
+  ]
+  abis.energyOracle = [
+    { inputs: [{ name: 'timeSlot', type: 'uint256' }], name: 'getTotalProductionInSlot', outputs: [{ type: 'uint256' }], stateMutability: 'view', type: 'function' },
   ]
 }

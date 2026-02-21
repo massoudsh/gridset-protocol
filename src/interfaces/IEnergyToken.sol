@@ -23,5 +23,7 @@ interface IEnergyToken {
     function burn(address from, uint256 amount) external;
     function lock(address account, uint256 amount) external;
     function unlock(address account, uint256 amount) external;
+    /// @notice Move locked amount from one account to another (as available). Only callable by locker (e.g. EnergyMarket).
+    function transferLocked(address from, address to, uint256 amount) external;
     function getEnergyBalance(address account) external view returns (EnergyBalance memory);
 }

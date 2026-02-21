@@ -1,10 +1,18 @@
 import { useState } from 'react'
 import { Sun, Zap, MapPin, Calendar, TrendingUp } from 'lucide-react'
 import { useWeb3 } from '../../context/Web3Context'
+import { useDemo } from '../../context/DemoContext'
+import ConfirmActionModal from '../ConfirmActionModal'
 
 export default function PanelRegistry({ setActiveView }) {
   const { isConnected } = useWeb3()
+  const { isDemoMode } = useDemo()
   const [showRegister, setShowRegister] = useState(false)
+  const [registerConfirmOpen, setRegisterConfirmOpen] = useState(false)
+  const [capacity, setCapacity] = useState('')
+  const [location, setLocation] = useState('')
+  const [installDate, setInstallDate] = useState('')
+  const [metadataUri, setMetadataUri] = useState('')
 
   const mockPanels = [
     {
@@ -43,13 +51,13 @@ export default function PanelRegistry({ setActiveView }) {
           <h2 className="text-3xl font-bold text-white mb-2">Panel Registry</h2>
           <p className="text-gray-400">Manage your energy production panels</p>
         </div>
-        {isConnected && (
+        {(isConnected || isDemoMode) && (
           <button
             type="button"
             onClick={() => setShowRegister(!showRegister)}
             className="btn-primary"
           >
-            Register New Panel
+            {isDemoMode ? 'Register panel (demo)' : 'Register New Panel'}
           </button>
         )}
       </div>
@@ -64,6 +72,8 @@ export default function PanelRegistry({ setActiveView }) {
                 type="number"
                 step="0.1"
                 placeholder="5.0"
+                value={capacity}
+                onChange={(e) => setCapacity(e.target.value)}
                 className="input-field w-full"
               />
             </div>
@@ -72,6 +82,8 @@ export default function PanelRegistry({ setActiveView }) {
               <input
                 type="text"
                 placeholder="City, State"
+                value={location}
+                onChange={(e) => setLocation(e.target.value)}
                 className="input-field w-full"
               />
             </div>
@@ -79,6 +91,8 @@ export default function PanelRegistry({ setActiveView }) {
               <label className="block text-sm text-gray-400 mb-2">Installation Date</label>
               <input
                 type="date"
+                value={installDate}
+                onChange={(e) => setInstallDate(e.target.value)}
                 className="input-field w-full"
               />
             </div>
@@ -87,12 +101,26 @@ export default function PanelRegistry({ setActiveView }) {
               <input
                 type="text"
                 placeholder="ipfs://..."
+                value={metadataUri}
+                onChange={(e) => setMetadataUri(e.target.value)}
                 className="input-field w-full"
               />
             </div>
           </div>
           <div className="flex gap-3 mt-4">
-            <button type="button" className="btn-primary">Register Panel</button>
+            <button
+              type="button"
+              onClick={() => {
+                if (!capacity.trim()) {
+                  alert('Enter panel capacity')
+                  return
+                }
+                setRegisterConfirmOpen(true)
+              }}
+              className="btn-primary"
+            >
+              Register Panel
+            </button>
             <button
               type="button"
               onClick={() => setShowRegister(false)}
@@ -103,6 +131,33 @@ export default function PanelRegistry({ setActiveView }) {
           </div>
         </div>
       )}
+
+      <ConfirmActionModal
+        open={registerConfirmOpen}
+        onClose={() => setRegisterConfirmOpen(false)}
+        onConfirm={() => {
+          if (isDemoMode) alert(`Demo: Panel registered (${capacity} kW, ${location || '—'}). Connect wallet to register on-chain.`)
+          setCapacity('')
+          setLocation('')
+          setInstallDate('')
+          setMetadataUri('')
+          setShowRegister(false)
+        }}
+        title="Confirm panel registration"
+      >
+        <p className="text-gray-400 text-sm mb-1">Capacity</p>
+        <p className="text-white font-semibold">{capacity || '—'} kW</p>
+        <p className="text-gray-400 text-sm mt-2 mb-1">Location</p>
+        <p className="text-white font-semibold">{location || '—'}</p>
+        <p className="text-gray-400 text-sm mt-2 mb-1">Installation date</p>
+        <p className="text-white font-semibold">{installDate || '—'}</p>
+        {metadataUri && (
+          <>
+            <p className="text-gray-400 text-sm mt-2 mb-1">Metadata URI</p>
+            <p className="text-white font-mono text-sm truncate">{metadataUri}</p>
+          </>
+        )}
+      </ConfirmActionModal>
 
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
         <div className="metric-card">

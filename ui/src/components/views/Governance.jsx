@@ -1,8 +1,19 @@
+import { useState } from 'react'
 import { FileText, CheckCircle, XCircle, Clock, Vote } from 'lucide-react'
 import { useWeb3 } from '../../context/Web3Context'
+import { useDemo } from '../../context/DemoContext'
+import ConfirmActionModal from '../ConfirmActionModal'
 
 export default function Governance() {
   const { isConnected } = useWeb3()
+  const { isDemoMode } = useDemo()
+  const [proposalTitle, setProposalTitle] = useState('')
+  const [proposalDesc, setProposalDesc] = useState('')
+  const [votingPeriod, setVotingPeriod] = useState('')
+  const [createConfirmOpen, setCreateConfirmOpen] = useState(false)
+  const [voteConfirmOpen, setVoteConfirmOpen] = useState(false)
+  const [votingProposal, setVotingProposal] = useState(null)
+  const [voteFor, setVoteFor] = useState(true)
 
   const mockProposals = [
     {
@@ -60,15 +71,7 @@ export default function Governance() {
         <p className="text-gray-400">Participate in protocol governance and decision-making</p>
       </div>
 
-      {!isConnected && (
-        <div className="card bg-energy-blue/10 border-energy-blue/50">
-          <p className="text-energy-blue">
-            Connect your wallet to create proposals and vote on governance decisions
-          </p>
-        </div>
-      )}
-
-      {isConnected && (
+      {(isConnected || isDemoMode) && (
         <div className="card">
           <div className="flex items-center justify-between mb-4">
             <h3 className="text-xl font-semibold text-white">Create Proposal</h3>
@@ -80,6 +83,8 @@ export default function Governance() {
               <input
                 type="text"
                 placeholder="Enter proposal title"
+                value={proposalTitle}
+                onChange={(e) => setProposalTitle(e.target.value)}
                 className="input-field w-full"
               />
             </div>
@@ -88,6 +93,8 @@ export default function Governance() {
               <textarea
                 placeholder="Describe your proposal..."
                 rows="4"
+                value={proposalDesc}
+                onChange={(e) => setProposalDesc(e.target.value)}
                 className="input-field w-full"
               />
             </div>
@@ -96,13 +103,67 @@ export default function Governance() {
               <input
                 type="number"
                 placeholder="7"
+                value={votingPeriod}
+                onChange={(e) => setVotingPeriod(e.target.value)}
                 className="input-field w-full"
               />
             </div>
-            <button type="button" className="btn-primary">Create Proposal</button>
+            <button
+              type="button"
+              onClick={() => {
+                if (!proposalTitle.trim()) {
+                  alert('Enter a proposal title')
+                  return
+                }
+                setCreateConfirmOpen(true)
+              }}
+              className="btn-primary"
+            >
+              Create Proposal
+            </button>
           </div>
         </div>
       )}
+
+      <ConfirmActionModal
+        open={createConfirmOpen}
+        onClose={() => setCreateConfirmOpen(false)}
+        onConfirm={() => {
+          if (isDemoMode) alert(`Demo: Proposal "${proposalTitle}" created. Connect wallet to create on-chain.`)
+          setProposalTitle('')
+          setProposalDesc('')
+          setVotingPeriod('')
+          setCreateConfirmOpen(false)
+        }}
+        title="Confirm create proposal"
+      >
+        <p className="text-gray-400 text-sm mb-1">Title</p>
+        <p className="text-white font-semibold">{proposalTitle || '—'}</p>
+        <p className="text-gray-400 text-sm mt-2 mb-1">Description</p>
+        <p className="text-gray-300 text-sm line-clamp-3">{proposalDesc || '—'}</p>
+        <p className="text-gray-400 text-sm mt-2 mb-1">Voting period</p>
+        <p className="text-white font-semibold">{votingPeriod || '7'} days</p>
+      </ConfirmActionModal>
+
+      <ConfirmActionModal
+        open={voteConfirmOpen}
+        onClose={() => { setVoteConfirmOpen(false); setVotingProposal(null) }}
+        onConfirm={() => {
+          if (isDemoMode && votingProposal) alert(`Demo: Voted ${voteFor ? 'For' : 'Against'} "${votingProposal.title}". Connect wallet to vote on-chain.`)
+          setVoteConfirmOpen(false)
+          setVotingProposal(null)
+        }}
+        title={votingProposal ? `Confirm vote ${voteFor ? 'For' : 'Against'}` : 'Confirm vote'}
+      >
+        {votingProposal && (
+          <>
+            <p className="text-gray-400 text-sm mb-1">Proposal</p>
+            <p className="text-white font-semibold">{votingProposal.title}</p>
+            <p className="text-gray-400 text-sm mt-2 mb-1">Your vote</p>
+            <p className={`font-semibold ${voteFor ? 'text-energy-green' : 'text-red-400'}`}>{voteFor ? 'For' : 'Against'}</p>
+          </>
+        )}
+      </ConfirmActionModal>
 
       <div className="card">
         <h3 className="text-xl font-semibold text-white mb-4">Active Proposals</h3>
@@ -160,13 +221,21 @@ export default function Governance() {
                     </div>
                   </div>
 
-                  {proposal.status === 'active' && isConnected && (
+                  {proposal.status === 'active' && (isConnected || isDemoMode) && (
                     <div className="flex gap-3 pt-3 border-t border-gray-700">
-                      <button type="button" className="flex-1 btn-primary flex items-center justify-center gap-2">
+                      <button
+                        type="button"
+                        onClick={() => { setVotingProposal(proposal); setVoteFor(true); setVoteConfirmOpen(true) }}
+                        className="flex-1 btn-primary flex items-center justify-center gap-2"
+                      >
                         <CheckCircle className="w-4 h-4" />
                         Vote For
                       </button>
-                      <button type="button" className="flex-1 bg-red-500 hover:bg-red-600 text-white font-semibold py-2 px-4 rounded-lg transition-colors flex items-center justify-center gap-2">
+                      <button
+                        type="button"
+                        onClick={() => { setVotingProposal(proposal); setVoteFor(false); setVoteConfirmOpen(true) }}
+                        className="flex-1 bg-red-500 hover:bg-red-600 text-white font-semibold py-2 px-4 rounded-lg transition-colors flex items-center justify-center gap-2"
+                      >
                         <XCircle className="w-4 h-4" />
                         Vote Against
                       </button>

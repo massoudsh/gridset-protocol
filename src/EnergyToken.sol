@@ -156,4 +156,19 @@ contract EnergyToken is IEnergyToken {
         unchecked { _locked[account] -= amount; }
         emit Unlock(account, amount);
     }
+
+    /// @notice Move locked amount from `from` to `to` as available balance. Used by EnergyMarket on auction clear.
+    function transferLocked(address from, address to, uint256 amount) external override onlyLocker {
+        if (from == address(0) || to == address(0)) revert ZeroAddress();
+        if (amount == 0) revert AmountZero();
+        if (amount > _locked[from]) revert InsufficientLocked();
+
+        unchecked {
+            _locked[from] -= amount;
+            _balances[from] -= amount;
+            _balances[to] += amount;
+        }
+        emit Unlock(from, amount);
+        emit Transfer(from, to, amount);
+    }
 }

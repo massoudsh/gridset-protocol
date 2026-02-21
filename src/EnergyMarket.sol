@@ -2,12 +2,17 @@
 pragma solidity ^0.8.20;
 
 import "./interfaces/IEnergyMarket.sol";
+import "./interfaces/IEnergyToken.sol";
 
 /**
  * @title EnergyMarket
  * @notice Batch auction for energy: collect bids/asks per time slot, clear at uniform price.
+ * @dev On placeBid locks buyer's tokens (price * quantity); on placeAsk locks seller's tokens (quantity).
+ * On clearAuction transfers locked amounts between matched parties. On cancelOrder unlocks remaining.
  */
 contract EnergyMarket is IEnergyMarket {
+    IEnergyToken public immutable energyToken;
+
     uint256 private _nextOrderId = 1;
     mapping(uint256 => Order) private _orders;
     mapping(uint256 => Auction) private _auctions;
@@ -15,6 +20,7 @@ contract EnergyMarket is IEnergyMarket {
     mapping(uint256 => uint256[]) private _askOrderIds;
 
     address public owner;
+    bool public paused;
 
     error Unauthorized();
     error InvalidTimeSlot();
@@ -24,17 +30,28 @@ contract EnergyMarket is IEnergyMarket {
     error OrderNotActive();
     error ZeroQuantity();
     error ZeroPrice();
+    error MarketPaused();
 
     modifier onlyOwner() {
         if (msg.sender != owner) revert Unauthorized();
         _;
     }
 
-    constructor() {
-        owner = msg.sender;
+    modifier whenNotPaused() {
+        if (paused) revert MarketPaused();
+        _;
     }
 
-    function startAuction(uint256 timeSlot, uint256 duration) external override onlyOwner {
+    function setPaused(bool _paused) external onlyOwner {
+        paused = _paused;
+    }
+
+    constructor(IEnergyToken _energyToken) {
+        owner = msg.sender;
+        energyToken = _energyToken;
+    }
+
+    function startAuction(uint256 timeSlot, uint256 duration) external override onlyOwner whenNotPaused {
         if (duration == 0) revert InvalidTimeSlot();
         Auction storage a = _auctions[timeSlot];
         a.timeSlot = timeSlot;
@@ -44,12 +61,16 @@ contract EnergyMarket is IEnergyMarket {
         emit AuctionStarted(timeSlot, a.startTime, a.endTime);
     }
 
-    function placeBid(uint256 timeSlot, uint256 price, uint256 quantity) external override returns (uint256) {
+    function placeBid(uint256 timeSlot, uint256 price, uint256 quantity) external override whenNotPaused returns (uint256) {
         if (price == 0) revert ZeroPrice();
         if (quantity == 0) revert ZeroQuantity();
         Auction storage a = _auctions[timeSlot];
         if (a.endTime == 0 || block.timestamp >= a.endTime) revert AuctionNotOpen();
         if (a.isCleared) revert AuctionAlreadyCleared();
+
+        uint256 cost;
+        unchecked { cost = price * quantity; }
+        energyToken.lock(msg.sender, cost);
 
         uint256 orderId;
         unchecked { orderId = _nextOrderId++; }
@@ -69,12 +90,14 @@ contract EnergyMarket is IEnergyMarket {
         return orderId;
     }
 
-    function placeAsk(uint256 timeSlot, uint256 price, uint256 quantity) external override returns (uint256) {
+    function placeAsk(uint256 timeSlot, uint256 price, uint256 quantity) external override whenNotPaused returns (uint256) {
         if (price == 0) revert ZeroPrice();
         if (quantity == 0) revert ZeroQuantity();
         Auction storage a = _auctions[timeSlot];
         if (a.endTime == 0 || block.timestamp >= a.endTime) revert AuctionNotOpen();
         if (a.isCleared) revert AuctionAlreadyCleared();
+
+        energyToken.lock(msg.sender, quantity);
 
         uint256 orderId;
         unchecked { orderId = _nextOrderId++; }
@@ -102,11 +125,17 @@ contract EnergyMarket is IEnergyMarket {
         Auction storage a = _auctions[o.timeSlot];
         if (a.isCleared) revert AuctionAlreadyCleared();
 
-        o.isActive = false;
-        unchecked {
-            if (o.isBid) a.totalBidQuantity -= (o.quantity - o.filledQuantity);
-            else a.totalAskQuantity -= (o.quantity - o.filledQuantity);
+        uint256 remain = o.quantity - o.filledQuantity;
+        if (o.isBid) {
+            uint256 unlockAmount;
+            unchecked { unlockAmount = remain * o.price; }
+            energyToken.unlock(msg.sender, unlockAmount);
+            a.totalBidQuantity -= remain;
+        } else {
+            energyToken.unlock(msg.sender, remain);
+            a.totalAskQuantity -= remain;
         }
+        o.isActive = false;
         emit OrderCancelled(orderId);
     }
 
@@ -140,10 +169,16 @@ contract EnergyMarket is IEnergyMarket {
             uint256 askRemain = ask.quantity - ask.filledQuantity;
             uint256 fill = bidRemain <= askRemain ? bidRemain : askRemain;
 
+            uint256 matchPrice = bid.price;
+            uint256 payment;
+            unchecked { payment = fill * matchPrice; }
+            energyToken.transferLocked(bid.trader, ask.trader, payment);
+            energyToken.transferLocked(ask.trader, bid.trader, fill);
+
             bid.filledQuantity += fill;
             ask.filledQuantity += fill;
             totalMatched += fill;
-            clearingPrice = bid.price;
+            clearingPrice = matchPrice;
 
             if (bid.filledQuantity >= bid.quantity) bidIdx++;
             if (ask.filledQuantity >= ask.quantity) askIdx++;

@@ -1,11 +1,16 @@
 import { useState } from 'react'
-import { Lock, Unlock, Shield, TrendingUp, AlertTriangle } from 'lucide-react'
+import { Lock, Unlock, Shield, AlertTriangle } from 'lucide-react'
 import { useWeb3 } from '../../context/Web3Context'
+import { useDemo } from '../../context/DemoContext'
+import ConfirmActionModal from '../ConfirmActionModal'
 
 export default function StakingVault() {
   const { isConnected } = useWeb3()
+  const { isDemoMode } = useDemo()
   const [stakeAmount, setStakeAmount] = useState('')
   const [withdrawAmount, setWithdrawAmount] = useState('')
+  const [confirmDepositOpen, setConfirmDepositOpen] = useState(false)
+  const [confirmWithdrawOpen, setConfirmWithdrawOpen] = useState(false)
 
   const mockStakeInfo = {
     total: 5000,
@@ -15,22 +20,46 @@ export default function StakingVault() {
     penalties: 0,
   }
 
-  const handleDeposit = () => {
-    if (!isConnected) {
-      alert('Please connect your wallet first')
+  const openDepositConfirm = () => {
+    if (!stakeAmount || parseFloat(stakeAmount) <= 0) {
+      alert('Enter amount to deposit')
+      return
+    }
+    setConfirmDepositOpen(true)
+  }
+
+  const openWithdrawConfirm = () => {
+    if (!withdrawAmount || parseFloat(withdrawAmount) <= 0) {
+      alert('Enter amount to withdraw')
+      return
+    }
+    if (parseFloat(withdrawAmount) > mockStakeInfo.available) {
+      alert('Insufficient available balance')
+      return
+    }
+    setConfirmWithdrawOpen(true)
+  }
+
+  const executeDeposit = () => {
+    if (isDemoMode) {
+      alert(`Demo: Deposited ${stakeAmount} GRID. Connect wallet to stake for real.`)
+      setStakeAmount('')
       return
     }
     // TODO: Implement contract interaction
     alert(`Depositing ${stakeAmount} GRID tokens`)
+    setStakeAmount('')
   }
 
-  const handleWithdraw = () => {
-    if (!isConnected) {
-      alert('Please connect your wallet first')
+  const executeWithdraw = () => {
+    if (isDemoMode) {
+      alert(`Demo: Withdrew ${withdrawAmount} GRID. Connect wallet to withdraw for real.`)
+      setWithdrawAmount('')
       return
     }
     // TODO: Implement contract interaction
     alert(`Withdrawing ${withdrawAmount} GRID tokens`)
+    setWithdrawAmount('')
   }
 
   return (
@@ -39,14 +68,6 @@ export default function StakingVault() {
         <h2 className="text-3xl font-bold text-white mb-2">Staking Vault</h2>
         <p className="text-gray-400">Manage your staked tokens for economic security</p>
       </div>
-
-      {!isConnected && (
-        <div className="card bg-energy-blue/10 border-energy-blue/50">
-          <p className="text-energy-blue">
-            Connect your wallet to view and manage your staking position
-          </p>
-        </div>
-      )}
 
       <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
         <div className="metric-card">
@@ -116,13 +137,27 @@ export default function StakingVault() {
             </div>
             <button
               type="button"
-              onClick={handleDeposit}
+              onClick={openDepositConfirm}
               className="w-full btn-primary"
             >
               Deposit Stake
             </button>
           </div>
         </div>
+
+        <ConfirmActionModal
+          open={confirmDepositOpen}
+          onClose={() => setConfirmDepositOpen(false)}
+          onConfirm={executeDeposit}
+          title="Confirm deposit"
+        >
+          <p className="text-gray-400 text-sm mb-1">Action</p>
+          <p className="text-white font-semibold">Deposit {stakeAmount || '0'} GRID</p>
+          <p className="text-gray-400 text-sm mt-2 mb-1">New total stake</p>
+          <p className="text-energy-green font-semibold">
+            {(mockStakeInfo.total + parseFloat(stakeAmount || 0)).toLocaleString()} GRID
+          </p>
+        </ConfirmActionModal>
 
         <div className="card">
           <h3 className="text-xl font-semibold text-white mb-4">Withdraw Stake</h3>
@@ -153,13 +188,27 @@ export default function StakingVault() {
             </div>
             <button
               type="button"
-              onClick={handleWithdraw}
+              onClick={openWithdrawConfirm}
               className="w-full btn-secondary"
             >
               Withdraw Stake
             </button>
           </div>
         </div>
+
+        <ConfirmActionModal
+          open={confirmWithdrawOpen}
+          onClose={() => setConfirmWithdrawOpen(false)}
+          onConfirm={executeWithdraw}
+          title="Confirm withdraw"
+        >
+          <p className="text-gray-400 text-sm mb-1">Action</p>
+          <p className="text-white font-semibold">Withdraw {withdrawAmount || '0'} GRID</p>
+          <p className="text-gray-400 text-sm mt-2 mb-1">Remaining available</p>
+          <p className="text-energy-green font-semibold">
+            {Math.max(0, mockStakeInfo.available - parseFloat(withdrawAmount || 0)).toLocaleString()} GRID
+          </p>
+        </ConfirmActionModal>
       </div>
 
       <div className="card">

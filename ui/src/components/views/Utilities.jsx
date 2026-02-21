@@ -1,193 +1,47 @@
-import { useState } from 'react'
+import { useState, useMemo } from 'react'
 import {
   BatteryCharging,
-  ChevronRight,
   ExternalLink,
   ShoppingCart,
   Star,
+  Link2,
 } from 'lucide-react'
 import { useWeb3 } from '../../context/Web3Context'
-
-// Realistic product data with Unsplash images (free to use, no attribution required per Unsplash license)
-const PRODUCTS = [
-  {
-    id: 'pb-1',
-    category: 'power-banks',
-    name: 'Portable Power Bank 20,000 mAh',
-    brand: 'GridFlow',
-    capacity: '20,000 mAh',
-    specs: ['USB-C PD 22.5W', 'Dual USB-A', 'LED display', 'Solar input optional'],
-    price: 49.99,
-    currency: 'USD',
-    rating: 4.6,
-    reviews: 1240,
-    image: 'https://images.unsplash.com/photo-1609091839311-d5365f9ff1c5?w=400&h=300&fit=crop',
-    inStock: true,
-  },
-  {
-    id: 'pb-2',
-    category: 'power-banks',
-    name: 'Compact 10,000 mAh Power Bank',
-    brand: 'EcoCharge',
-    capacity: '10,000 mAh',
-    specs: ['USB-C in/out', '18W fast charge', 'Pocket size', 'Airline safe'],
-    price: 29.99,
-    currency: 'USD',
-    rating: 4.5,
-    reviews: 892,
-    image: 'https://images.unsplash.com/photo-1583863788434-e58a36330cf0?w=400&h=300&fit=crop',
-    inStock: true,
-  },
-  {
-    id: 'ps-1',
-    category: 'large-power-stations',
-    name: 'Portable Power Station 1000Wh',
-    brand: 'SunCore',
-    capacity: '1000 Wh',
-    specs: ['AC 1000W output', 'Solar input 200W max', '8 outlets', 'Quiet operation'],
-    price: 799.00,
-    currency: 'USD',
-    rating: 4.7,
-    reviews: 456,
-    image: 'https://images.unsplash.com/photo-1509391366360-2e959784a276?w=400&h=300&fit=crop',
-    inStock: true,
-  },
-  {
-    id: 'ps-2',
-    category: 'large-power-stations',
-    name: 'Power Station 2000Wh Pro',
-    brand: 'GridFlow',
-    capacity: '2000 Wh',
-    specs: ['AC 2000W surge', 'Solar 500W input', 'LiFePO4 3000+ cycles', 'Expandable'],
-    price: 1499.00,
-    currency: 'USD',
-    rating: 4.8,
-    reviews: 312,
-    image: 'https://images.unsplash.com/photo-1559302504-64aae0ca2a3d?w=400&h=300&fit=crop',
-    inStock: true,
-  },
-  {
-    id: 'bat-1',
-    category: 'batteries',
-    name: 'Home Battery 10 kWh',
-    brand: 'EcoStore',
-    capacity: '10 kWh',
-    specs: ['LiFePO4', '10-year warranty', 'Wall mount', 'Grid hybrid'],
-    price: 4500.00,
-    currency: 'USD',
-    rating: 4.6,
-    reviews: 178,
-    image: 'https://images.unsplash.com/photo-1581094271901-8022df4466f9?w=400&h=300&fit=crop',
-    inStock: true,
-  },
-  {
-    id: 'bat-2',
-    category: 'batteries',
-    name: '12V 100Ah LiFePO4 Battery',
-    brand: 'PowerCell',
-    capacity: '1.2 kWh',
-    specs: ['2000+ cycles', 'BMS included', 'RV / marine', 'No maintenance'],
-    price: 399.00,
-    currency: 'USD',
-    rating: 4.5,
-    reviews: 534,
-    image: 'https://images.unsplash.com/photo-1625628715193-9bc99dd40d0c?w=400&h=300&fit=crop',
-    inStock: true,
-  },
-  {
-    id: 'sol-1',
-    category: 'solar-generators',
-    name: 'Solar Generator Kit 500W',
-    brand: 'SunCore',
-    capacity: '512 Wh',
-    specs: ['100W foldable panel', 'AC/DC/USB', 'Carry case', 'Off-grid ready'],
-    price: 449.00,
-    currency: 'USD',
-    rating: 4.4,
-    reviews: 667,
-    image: 'https://images.unsplash.com/photo-1508514177221-188b1cf16e9d?w=400&h=300&fit=crop',
-    inStock: true,
-  },
-  {
-    id: 'sol-2',
-    category: 'solar-generators',
-    name: 'All-in-One Solar + Storage 2kWh',
-    brand: 'GridFlow',
-    capacity: '2048 Wh',
-    specs: ['Built-in 200W solar', 'Quiet inverter', 'Wheeled', 'Emergency backup'],
-    price: 1899.00,
-    currency: 'USD',
-    rating: 4.7,
-    reviews: 223,
-    image: 'https://images.unsplash.com/photo-1509391366360-2e959784a276?w=400&h=300&fit=crop',
-    inStock: true,
-  },
-  {
-    id: 'cell-1',
-    category: 'cells',
-    name: '21700 Li-ion Cell 5000mAh',
-    brand: 'PowerCell',
-    capacity: '18 Wh/cell',
-    specs: ['High discharge', 'Bulk packs', 'DIY / OEM', 'Tested grade A'],
-    price: 5.99,
-    currency: 'USD',
-    rating: 4.3,
-    reviews: 1204,
-    image: 'https://images.unsplash.com/photo-1625628715193-9bc99dd40d0c?w=400&h=300&fit=crop',
-    inStock: true,
-  },
-  {
-    id: 'acc-1',
-    category: 'accessories',
-    name: '100W Portable Solar Panel',
-    brand: 'SunCore',
-    capacity: '100W',
-    specs: ['Foldable', 'USB + DC', 'Kickstand', 'Water resistant'],
-    price: 199.00,
-    currency: 'USD',
-    rating: 4.5,
-    reviews: 891,
-    image: 'https://images.unsplash.com/photo-1508514177221-188b1cf16e9d?w=400&h=300&fit=crop',
-    inStock: true,
-  },
-  {
-    id: 'acc-2',
-    category: 'accessories',
-    name: 'MC4 Cable Set & Connectors',
-    brand: 'EcoCharge',
-    capacity: '—',
-    specs: ['10m pair', 'UV resistant', 'Tool-free', '10-year'],
-    price: 34.99,
-    currency: 'USD',
-    rating: 4.6,
-    reviews: 445,
-    image: 'https://images.unsplash.com/photo-1558618666-fcd25c85cd64?w=400&h=300&fit=crop',
-    inStock: true,
-  },
-]
-
-const CATEGORIES = [
-  { id: 'all', label: 'All' },
-  { id: 'power-banks', label: 'Power Banks' },
-  { id: 'large-power-stations', label: 'Power Stations' },
-  { id: 'batteries', label: 'Batteries' },
-  { id: 'solar-generators', label: 'Solar Generators' },
-  { id: 'cells', label: 'Cells' },
-  { id: 'accessories', label: 'Accessories' },
-]
-
-function formatPrice(price, currency) {
-  return new Intl.NumberFormat('en-US', { style: 'currency', currency }).format(price)
-}
+import { useCart } from '../../context/CartContext'
+import ProductDetailModal from '../ProductDetailModal'
+import { PRODUCTS, CATEGORIES, BRANDS, getProduct, formatPrice, parseCapacity, SORT_OPTIONS } from '../../config/products'
 
 export default function Utilities() {
-  const { isConnected } = useWeb3()
+  const { isConnected, account } = useWeb3()
+  const { addItem, getLinkedOrders } = useCart()
   const [categoryFilter, setCategoryFilter] = useState('all')
+  const [detailProductId, setDetailProductId] = useState(null)
+  const [priceMin, setPriceMin] = useState('')
+  const [priceMax, setPriceMax] = useState('')
+  const [capacityMin, setCapacityMin] = useState('')
+  const [capacityMax, setCapacityMax] = useState('')
+  const [brandFilter, setBrandFilter] = useState('all')
+  const [sortBy, setSortBy] = useState('price-asc')
 
-  const filtered =
-    categoryFilter === 'all'
-      ? PRODUCTS
-      : PRODUCTS.filter((p) => p.category === categoryFilter)
+  const linkedOrders = isConnected && account ? getLinkedOrders(account) : []
+
+  const filtered = useMemo(() => {
+    let list = categoryFilter === 'all' ? [...PRODUCTS] : PRODUCTS.filter((p) => p.category === categoryFilter)
+    if (brandFilter !== 'all') list = list.filter((p) => p.brand === brandFilter)
+    const pMin = priceMin === '' ? -Infinity : parseFloat(priceMin)
+    const pMax = priceMax === '' ? Infinity : parseFloat(priceMax)
+    if (!Number.isNaN(pMin)) list = list.filter((p) => p.price >= pMin)
+    if (!Number.isNaN(pMax)) list = list.filter((p) => p.price <= pMax)
+    const cMin = capacityMin === '' ? -Infinity : parseFloat(capacityMin)
+    const cMax = capacityMax === '' ? Infinity : parseFloat(capacityMax)
+    if (!Number.isNaN(cMin)) list = list.filter((p) => parseCapacity(p.capacity) >= cMin)
+    if (!Number.isNaN(cMax)) list = list.filter((p) => parseCapacity(p.capacity) <= cMax)
+    if (sortBy === 'price-asc') list.sort((a, b) => a.price - b.price)
+    else if (sortBy === 'price-desc') list.sort((a, b) => b.price - a.price)
+    else if (sortBy === 'rating') list.sort((a, b) => b.rating - a.rating)
+    else if (sortBy === 'newest') list.sort((a, b) => PRODUCTS.indexOf(b) - PRODUCTS.indexOf(a))
+    return list
+  }, [categoryFilter, brandFilter, priceMin, priceMax, capacityMin, capacityMax, sortBy])
 
   return (
     <div className="space-y-6">
@@ -206,7 +60,7 @@ export default function Utilities() {
         </div>
       )}
 
-      <div className="flex flex-wrap gap-2">
+      <div className="flex flex-wrap gap-2 mb-4">
         {CATEGORIES.map((cat) => (
           <button
             key={cat.id}
@@ -223,11 +77,72 @@ export default function Utilities() {
         ))}
       </div>
 
+      <div className="flex flex-wrap items-center gap-4 mb-6 p-4 bg-slate-800/50 rounded-lg border border-gray-700">
+        <span className="text-gray-400 text-sm font-medium">Filters & sort</span>
+        <select
+          value={brandFilter}
+          onChange={(e) => setBrandFilter(e.target.value)}
+          className="input-field w-36 text-sm py-1.5"
+        >
+          <option value="all">All brands</option>
+          {BRANDS.map((b) => (
+            <option key={b.id} value={b.id}>{b.label}</option>
+          ))}
+        </select>
+        <input
+          type="number"
+          min="0"
+          step="1"
+          placeholder="Min price"
+          value={priceMin}
+          onChange={(e) => setPriceMin(e.target.value)}
+          className="input-field w-24 text-sm py-1.5"
+        />
+        <input
+          type="number"
+          min="0"
+          step="1"
+          placeholder="Max price"
+          value={priceMax}
+          onChange={(e) => setPriceMax(e.target.value)}
+          className="input-field w-24 text-sm py-1.5"
+        />
+        <input
+          type="number"
+          min="0"
+          placeholder="Min capacity"
+          value={capacityMin}
+          onChange={(e) => setCapacityMin(e.target.value)}
+          className="input-field w-28 text-sm py-1.5"
+        />
+        <input
+          type="number"
+          min="0"
+          placeholder="Max capacity"
+          value={capacityMax}
+          onChange={(e) => setCapacityMax(e.target.value)}
+          className="input-field w-28 text-sm py-1.5"
+        />
+        <select
+          value={sortBy}
+          onChange={(e) => setSortBy(e.target.value)}
+          className="input-field w-44 text-sm py-1.5"
+        >
+          {SORT_OPTIONS.map((o) => (
+            <option key={o.id} value={o.id}>{o.label}</option>
+          ))}
+        </select>
+      </div>
+
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
         {filtered.map((product) => (
           <div
             key={product.id}
-            className="card overflow-hidden hover:border-energy-green transition-all duration-200 group"
+            role="button"
+            tabIndex={0}
+            onClick={() => setDetailProductId(product.id)}
+            onKeyDown={(e) => e.key === 'Enter' && setDetailProductId(product.id)}
+            className="card overflow-hidden hover:border-energy-green transition-all duration-200 group cursor-pointer"
           >
             <div className="relative aspect-[4/3] bg-slate-800 rounded-lg overflow-hidden mb-4">
               <img
@@ -262,9 +177,10 @@ export default function Utilities() {
                 </span>
                 <span className="text-xs text-gray-500">{product.reviews} reviews</span>
               </div>
-              <div className="flex gap-2 pt-2">
+              <div className="flex gap-2 pt-2" onClick={(e) => e.stopPropagation()}>
                 <button
                   type="button"
+                  onClick={() => addItem(product.id)}
                   className="flex-1 btn-primary flex items-center justify-center gap-2 py-2 text-sm"
                 >
                   <ShoppingCart className="w-4 h-4" />
@@ -272,6 +188,7 @@ export default function Utilities() {
                 </button>
                 <button
                   type="button"
+                  onClick={() => setDetailProductId(product.id)}
                   className="p-2 bg-slate-700 hover:bg-slate-600 rounded-lg text-gray-300"
                   title="View details"
                 >
@@ -283,6 +200,30 @@ export default function Utilities() {
         ))}
       </div>
 
+      {isConnected && account && linkedOrders.length > 0 && (
+        <div className="card">
+          <h3 className="text-xl font-semibold text-white mb-4 flex items-center gap-2">
+            <Link2 className="w-5 h-5 text-energy-green" />
+            My linked purchases
+          </h3>
+          <p className="text-gray-400 text-sm mb-4">Purchases linked to your wallet for future energy-credit eligibility.</p>
+          <ul className="space-y-3">
+            {linkedOrders.slice().reverse().map((order) => (
+              <li key={order.orderId} className="p-3 bg-gray-800 rounded-lg">
+                <div className="flex justify-between text-sm text-gray-400 mb-1">
+                  <span>Order #{String(order.orderId).slice(-6)}</span>
+                  <span>{new Date(order.timestamp).toLocaleDateString()}</span>
+                </div>
+                <div className="text-white font-medium">
+                  {order.productIds.map((id) => getProduct(id)?.name).filter(Boolean).join(', ')}
+                </div>
+                <div className="text-energy-green text-sm">{formatPrice(order.total)}</div>
+              </li>
+            ))}
+          </ul>
+        </div>
+      )}
+
       <div className="card flex items-start gap-4">
         <div className="p-3 rounded-lg bg-energy-green/20">
           <BatteryCharging className="w-8 h-8 text-energy-green" />
@@ -292,10 +233,18 @@ export default function Utilities() {
           <p className="text-gray-400 text-sm">
             Store and use energy from your panels or the grid with batteries and power banks. Large power stations
             and cells help you go off-grid, reduce peak demand, and pair with GRIDSET settlement for a full
-            green energy loop. Products shown use realistic specs; checkout and GRID credit linking coming in a future release.
+            green energy loop. Cart persists across the app; checkout supports “Link to GRIDSET” to associate purchases with your wallet for future energy-credit eligibility. Linked orders appear under “My linked purchases” when connected.
           </p>
         </div>
       </div>
+
+      {detailProductId && (
+        <ProductDetailModal
+          productId={detailProductId}
+          onClose={() => setDetailProductId(null)}
+          onAddToCart={addItem}
+        />
+      )}
     </div>
   )
 }

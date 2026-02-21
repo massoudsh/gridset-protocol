@@ -1,16 +1,20 @@
 import { useState, useEffect } from 'react'
 import { TrendingUp, TrendingDown, Clock, RefreshCw } from 'lucide-react'
 import { useWeb3 } from '../../context/Web3Context'
+import { useDemo } from '../../context/DemoContext'
+import ConfirmActionModal from '../ConfirmActionModal'
 
 const DEFAULT_MARKET_SLOT = 1000
 
 export default function EnergyMarket() {
   const { isConnected, contracts } = useWeb3()
+  const { isDemoMode, addDemoOrder, demoOrders, demoBalance } = useDemo()
   const [orderType, setOrderType] = useState('bid')
   const [timeSlot, setTimeSlot] = useState('')
   const [price, setPrice] = useState('')
   const [quantity, setQuantity] = useState('')
   const [marketSlot, setMarketSlot] = useState(String(DEFAULT_MARKET_SLOT))
+  const [orderConfirmOpen, setOrderConfirmOpen] = useState(false)
   const [orderBookLoading, setOrderBookLoading] = useState(false)
   const [orderBookError, setOrderBookError] = useState(null)
   const [auction, setAuction] = useState(null)
@@ -21,11 +25,16 @@ export default function EnergyMarket() {
   const slotNum = marketSlot ? parseInt(marketSlot, 10) : 0
   const hasMarketContract = contracts?.energyMarket && !isNaN(slotNum) && slotNum > 0
 
+  const [chainBids, setChainBids] = useState([])
+  const [chainAsks, setChainAsks] = useState([])
+
   useEffect(() => {
     if (!hasMarketContract) {
       setAuction(null)
       setBestBid({ price: 0, quantity: 0 })
       setBestAsk({ price: 0, quantity: 0 })
+      setChainBids([])
+      setChainAsks([])
       setOrderBookError(null)
       return
     }
@@ -36,8 +45,9 @@ export default function EnergyMarket() {
       contracts.energyMarket.getAuction(slotNum),
       contracts.energyMarket.getBestBid(slotNum),
       contracts.energyMarket.getBestAsk(slotNum),
+      contracts.energyMarket.getOrderBook(slotNum).catch(() => [[], []]),
     ])
-      .then(([a, bid, ask]) => {
+      .then(([a, bid, ask, [bids = [], asks = []]]) => {
         if (cancelled) return
         setAuction({
           timeSlot: Number(a.timeSlot),
@@ -50,6 +60,17 @@ export default function EnergyMarket() {
         })
         setBestBid({ price: Number(bid[0] ?? bid.price), quantity: Number(bid[1] ?? bid.quantity) })
         setBestAsk({ price: Number(ask[0] ?? ask.price), quantity: Number(ask[1] ?? ask.quantity) })
+        const toRow = (o) => ({
+          orderId: Number(o.orderId),
+          price: Number(o.price),
+          quantity: Number(o.quantity),
+          filledQuantity: Number(o.filledQuantity ?? 0),
+          total: Number(o.price) * Number(o.quantity) / 1e18 || 0,
+        })
+        const bidRows = Array.isArray(bids) ? bids.map(toRow).sort((a, b) => b.price - a.price) : []
+        const askRows = Array.isArray(asks) ? asks.map(toRow).sort((a, b) => a.price - b.price) : []
+        setChainBids(bidRows)
+        setChainAsks(askRows)
       })
       .catch((e) => {
         if (!cancelled) setOrderBookError(e?.message || 'Failed to load market')
@@ -67,7 +88,6 @@ export default function EnergyMarket() {
     { price: 0.065, quantity: 250, total: 16.25 },
     { price: 0.064, quantity: 120, total: 7.68 },
   ]
-
   const mockAsks = [
     { price: 0.069, quantity: 100, total: 6.9 },
     { price: 0.070, quantity: 150, total: 10.5 },
@@ -76,13 +96,45 @@ export default function EnergyMarket() {
     { price: 0.073, quantity: 220, total: 16.06 },
   ]
 
-  const handlePlaceOrder = () => {
-    if (!isConnected) {
+  const displayBids = hasMarketContract && chainBids.length > 0 ? chainBids : mockBids
+  const displayAsks = hasMarketContract && chainAsks.length > 0 ? chainAsks : mockAsks
+  const maxQ = Math.max(...displayBids.map((r) => r.quantity), ...displayAsks.map((r) => r.quantity), 1)
+
+  const openOrderConfirm = () => {
+    const q = parseFloat(quantity)
+    const p = parseFloat(price)
+    const slot = timeSlot || marketSlot
+    if (!q || q <= 0 || !p || p <= 0) {
+      alert('Enter valid price and quantity')
+      return
+    }
+    if (isDemoMode && orderType === 'bid' && q * p > demoBalance.available) {
+      alert('Insufficient available balance for this bid')
+      return
+    }
+    if (!isConnected && !isDemoMode) {
       alert('Please connect your wallet first')
+      return
+    }
+    setOrderConfirmOpen(true)
+  }
+
+  const executePlaceOrder = () => {
+    const q = parseFloat(quantity)
+    const p = parseFloat(price)
+    const slot = timeSlot || marketSlot
+    if (isDemoMode) {
+      addDemoOrder({ type: orderType, price: p, quantity: q, timeSlot: slot })
+      setPrice('')
+      setQuantity('')
+      setTimeSlot('')
       return
     }
     // TODO: Implement contract interaction
     alert(`Placing ${orderType} order: ${quantity} kWh at $${price}/kWh for time slot ${timeSlot}`)
+    setPrice('')
+    setQuantity('')
+    setTimeSlot('')
   }
 
   return (
@@ -137,15 +189,15 @@ export default function EnergyMarket() {
                   <h4 className="text-sm font-semibold text-gray-400 uppercase">Asks (Sell)</h4>
                 </div>
                 <div className="space-y-1">
-                  {mockAsks.map((ask, index) => (
+                  {displayAsks.slice(0, 12).map((ask, index) => (
                     <div
                       key={index}
                       className="flex items-center justify-between p-2 bg-red-500/10 hover:bg-red-500/20 rounded cursor-pointer transition-colors"
-                      style={{ width: `${(ask.quantity / 300) * 100}%`, marginLeft: 'auto' }}
+                      style={{ width: `${(ask.quantity / maxQ) * 100}%`, marginLeft: 'auto' }}
                     >
-                      <span className="text-red-400 font-semibold text-sm">{ask.price.toFixed(3)}</span>
-                      <span className="text-gray-300 text-sm">{ask.quantity}</span>
-                      <span className="text-gray-400 text-xs">{ask.total.toFixed(2)}</span>
+                      <span className="text-red-400 font-semibold text-sm">{Number(ask.price).toFixed(3)}</span>
+                      <span className="text-gray-300 text-sm">{ask.quantity}{ask.filledQuantity != null && ask.filledQuantity > 0 ? ` (${ask.filledQuantity} filled)` : ''}</span>
+                      <span className="text-gray-400 text-xs">{Number(ask.total).toFixed(2)}</span>
                     </div>
                   ))}
                 </div>
@@ -157,15 +209,15 @@ export default function EnergyMarket() {
                   <h4 className="text-sm font-semibold text-gray-400 uppercase">Bids (Buy)</h4>
                 </div>
                 <div className="space-y-1">
-                  {mockBids.map((bid, index) => (
+                  {displayBids.slice(0, 12).map((bid, index) => (
                     <div
                       key={index}
                       className="flex items-center justify-between p-2 bg-energy-green/10 hover:bg-energy-green/20 rounded cursor-pointer transition-colors"
-                      style={{ width: `${(bid.quantity / 300) * 100}%` }}
+                      style={{ width: `${(bid.quantity / maxQ) * 100}%` }}
                     >
-                      <span className="text-energy-green font-semibold text-sm">{bid.price.toFixed(3)}</span>
-                      <span className="text-gray-300 text-sm">{bid.quantity}</span>
-                      <span className="text-gray-400 text-xs">{bid.total.toFixed(2)}</span>
+                      <span className="text-energy-green font-semibold text-sm">{Number(bid.price).toFixed(3)}</span>
+                      <span className="text-gray-300 text-sm">{bid.quantity}{bid.filledQuantity != null && bid.filledQuantity > 0 ? ` (${bid.filledQuantity} filled)` : ''}</span>
+                      <span className="text-gray-400 text-xs">{Number(bid.total).toFixed(2)}</span>
                     </div>
                   ))}
                 </div>
@@ -203,10 +255,16 @@ export default function EnergyMarket() {
                 </span>
               </div>
               {auction?.isCleared && (
-                <div className="flex items-center justify-between mt-2">
-                  <span className="text-gray-400">Clearing Price</span>
-                  <span className="text-white font-semibold">{auction.clearingPrice}</span>
-                </div>
+                <>
+                  <div className="flex items-center justify-between mt-2">
+                    <span className="text-gray-400">Clearing Price</span>
+                    <span className="text-white font-semibold">{auction.clearingPrice}</span>
+                  </div>
+                  <div className="flex items-center justify-between mt-2">
+                    <span className="text-gray-400">Cleared Quantity</span>
+                    <span className="text-white font-semibold">{Math.min(auction.totalBidQuantity ?? 0, auction.totalAskQuantity ?? 0)} kWh</span>
+                  </div>
+                </>
               )}
             </div>
           </div>
@@ -310,11 +368,49 @@ export default function EnergyMarket() {
 
             <button
               type="button"
-              onClick={handlePlaceOrder}
+              onClick={openOrderConfirm}
               className="w-full btn-primary"
             >
-              Place {orderType === 'bid' ? 'Bid' : 'Ask'} Order
+              {isDemoMode ? 'Place order (demo)' : `Place ${orderType === 'bid' ? 'Bid' : 'Ask'} Order`}
             </button>
+
+            <ConfirmActionModal
+              open={orderConfirmOpen}
+              onClose={() => setOrderConfirmOpen(false)}
+              onConfirm={executePlaceOrder}
+              title="Confirm order"
+              demoSkipLabel={isDemoMode ? 'Place order (demo)' : undefined}
+            >
+              <p className="text-gray-400 text-sm mb-1">Type</p>
+              <p className="text-white font-semibold">{orderType === 'bid' ? 'Buy (Bid)' : 'Sell (Ask)'}</p>
+              <p className="text-gray-400 text-sm mt-2 mb-1">Quantity</p>
+              <p className="text-white font-semibold">{quantity} kWh</p>
+              <p className="text-gray-400 text-sm mt-2 mb-1">Price</p>
+              <p className="text-white font-semibold">${price}/kWh</p>
+              <p className="text-gray-400 text-sm mt-2 mb-1">Time slot</p>
+              <p className="text-white font-semibold">{timeSlot || marketSlot}</p>
+              {price && quantity && (
+                <>
+                  <p className="text-gray-400 text-sm mt-2 mb-1">Total</p>
+                  <p className="text-energy-green font-semibold">${(parseFloat(price) * parseFloat(quantity)).toFixed(2)}</p>
+                </>
+              )}
+            </ConfirmActionModal>
+
+            {isDemoMode && demoOrders.length > 0 && (
+              <div className="mt-4 pt-4 border-t border-gray-700">
+                <h4 className="text-sm font-semibold text-gray-400 mb-2">Your demo orders</h4>
+                <div className="space-y-2 max-h-32 overflow-y-auto">
+                  {demoOrders.slice(-5).reverse().map((o) => (
+                    <div key={o.id} className="flex justify-between text-sm bg-gray-800 rounded px-2 py-1.5">
+                      <span className={o.type === 'bid' ? 'text-energy-green' : 'text-red-400'}>{o.type}</span>
+                      <span className="text-white">{o.quantity} kWh @ ${o.price}</span>
+                      <span className="text-gray-400">slot {o.timeSlot}</span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
           </div>
         </div>
       </div>

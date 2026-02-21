@@ -6,6 +6,7 @@ import EnergyWallet from './views/EnergyWallet'
 import Settlement from './views/Settlement'
 import StakingVault from './views/StakingVault'
 import Governance from './views/Governance'
+import Activity from './views/Activity'
 import Settings from './views/Settings'
 
 export default function Dashboard({ activeView, setActiveView }) {
@@ -27,6 +28,8 @@ export default function Dashboard({ activeView, setActiveView }) {
         return <StakingVault />
       case 'governance':
         return <Governance />
+      case 'activity':
+        return <Activity />
       case 'settings':
         return <Settings />
       default:

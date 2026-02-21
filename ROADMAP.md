@@ -157,8 +157,9 @@ Mainnet launch:
 - Unchecked blocks where overflow/underflow ruled out (EnergyToken, StakingVault, EnergyMarket, GovernanceDAO)
 
 ### Multi-chain Support
-**Status:** 🔴 Not Started  
+**Status:** ✅ Completed  
 **Issue:** [#12](https://github.com/massoudsh/gridset-protocol/issues/12)
+- Header chain selector (Sepolia, OP Sepolia, Ethereum); switchChain; unsupported-chain highlight. See [docs/MULTICHAIN.md](docs/MULTICHAIN.md).
 
 ### Advanced Analytics Dashboard
 **Status:** ✅ Completed  
@@ -169,7 +170,7 @@ Mainnet launch:
 
 ## New issues for development
 
-See **[docs/NEW_ISSUES.md](docs/NEW_ISSUES.md)** for a backlog of 17 concrete issues (features, UX, infra, security) to create in GitHub. Includes: Utilities cart/checkout, EnergyMarket escrow, SettlementEngine/GovernanceDAO implementation, UI contract integration, deployment scripts, E2E tests, and more.
+See **[docs/NEW_ISSUES.md](docs/NEW_ISSUES.md)** for the full backlog. **Suggested next phases and order:** [docs/NEXT_PHASES.md](docs/NEXT_PHASES.md) — Phase 9 (testnet), Phase 10 (mainnet), then prioritized backlog (NEW-5, NEW-14, NEW-7, NEW-8, NEW-11, NEW-16, etc.).
 
 ---
 

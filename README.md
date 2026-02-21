@@ -135,6 +135,24 @@ See `ui/README.md` for more details.
 
 See **[docs/RELEASE_READINESS.md](docs/RELEASE_READINESS.md)** for the shortest path to testnet and mainnet release.
 
+### Testnet live (after you deploy)
+
+Once the deployer has Sepolia ETH, run:
+
+```bash
+export PRIVATE_KEY=0x...
+./script/deploy-sepolia.sh
+# or: forge script script/Deploy.s.sol --rpc-url https://ethereum-sepolia-rpc.publicnode.com --broadcast
+```
+
+Then restart the UI (`cd ui && npm run dev`). **Share** with testers:
+
+- **App URL:** your hosted URL (e.g. Vercel) or `http://localhost:5173` for local
+- **Network:** Sepolia (Chain ID 11155111)
+- **Get test ETH:** [sepoliafaucet.com](https://sepoliafaucet.com/)
+
+Copy-paste for announcements: *"GRIDSET testnet is live on Sepolia. Switch your wallet to Sepolia (11155111), get test ETH at [sepoliafaucet.com](https://sepoliafaucet.com/), then open the app. Set contract addresses in Settings if needed."*
+
 ### Deploy locally
 
 See **[docs/GETTING_STARTED.md](docs/GETTING_STARTED.md)** for the full flow. Quick version:

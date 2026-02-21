@@ -2,10 +2,12 @@
 pragma solidity ^0.8.20;
 
 import "./interfaces/IPanelRegistry.sol";
+import "./interfaces/IPanelNFT.sol";
 
 /**
  * @title PanelRegistry
  * @notice Tracks registered panels and production data per time slot.
+ * @dev When panelNFT is set, registerPanel requires owner_ to be the current ownerOf(tokenId) on PanelNFT.
  */
 contract PanelRegistry is IPanelRegistry {
     struct ProductionEntry {
@@ -19,6 +21,7 @@ contract PanelRegistry is IPanelRegistry {
     mapping(uint256 => uint256) private _idToIndex; // 1-based index in _registeredIds, 0 = not present
 
     address public owner;
+    address public panelNFT; // when set, registerPanel requires owner_ == IPanelNFT(panelNFT).ownerOf(tokenId)
     mapping(address => bool) public registrars;
     mapping(address => bool) public reporters;
 
@@ -26,6 +29,7 @@ contract PanelRegistry is IPanelRegistry {
     error ZeroAddress();
     error NotRegistered();
     error AlreadyRegistered();
+    error NotPanelNFTOwner();
 
     modifier onlyOwner() {
         if (msg.sender != owner) revert Unauthorized();
@@ -56,8 +60,15 @@ contract PanelRegistry is IPanelRegistry {
         reporters[account] = granted;
     }
 
+    function setPanelNFT(address _panelNFT) external onlyOwner {
+        panelNFT = _panelNFT;
+    }
+
     function registerPanel(uint256 tokenId, address owner_, uint256 capacityWatt) external override onlyRegistrar {
         if (_records[tokenId].isRegistered) revert AlreadyRegistered();
+        if (panelNFT != address(0)) {
+            if (IPanelNFT(panelNFT).ownerOf(tokenId) != owner_) revert NotPanelNFTOwner();
+        }
         _records[tokenId] = PanelRecord({
             tokenId: tokenId,
             owner: owner_,
